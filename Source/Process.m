@@ -1,0 +1,314 @@
+//
+//  Process.m
+//  ProcessMonitor
+//
+//  Created by Patrick Wardle on 9/1/19.
+//  Copyright © 2019 Objective-See. All rights reserved.
+//
+
+#import <libproc.h>
+#import <bsm/libbsm.h>
+#import <sys/sysctl.h>
+
+#import "utilities.h"
+#import "ProcessMonitor.h"
+
+/* FUNCTIONS */
+
+//helper function
+// get parent of arbitrary process
+pid_t getParentID(pid_t child);
+
+@implementation Process
+
+@synthesize pid;
+@synthesize exit;
+@synthesize path;
+@synthesize ppid;
+@synthesize event;
+@synthesize ancestors;
+@synthesize arguments;
+@synthesize timestamp;
+@synthesize signingInfo;
+
+//init
+-(id)init:(es_message_t*)message
+{
+    //init super
+    self = [super init];
+    if(nil != self)
+    {
+        //process from msg
+        es_process_t* process = NULL;
+        
+        //alloc array for args
+        self.arguments = [NSMutableArray array];
+        
+        //alloc array for parents
+        self.ancestors  = [NSMutableArray array];
+        
+        //alloc dictionary for signing info
+        self.signingInfo = [NSMutableDictionary dictionary];
+        
+        //init exit
+        self.exit = -1;
+        
+        //init user id
+        self.uid = -1;
+        
+        //init event
+        self.event = -1;
+        
+        //set start time
+        self.timestamp = [NSDate date];
+        
+        //set type
+        self.event = message->event_type;
+        
+        //event specific logic
+        // set type
+        // extract (relevant) process object, etc
+        switch (message->event_type) {
+            
+            //exec
+            case ES_EVENT_TYPE_NOTIFY_EXEC:
+                
+                //set process (target)
+                process = message->event.exec.target;
+                
+                //extract/format args
+                [self extractArgs:&message->event];
+                
+                break;
+                
+            //fork
+            case ES_EVENT_TYPE_NOTIFY_FORK:
+                
+                //set process (child)
+                process = message->event.fork.child;
+                
+                break;
+                
+            //exit
+            case ES_EVENT_TYPE_NOTIFY_EXIT:
+                
+                //set process
+                process = message->process;
+                
+                //set exit code
+                self.exit = message->event.exit.stat;
+                
+                break;
+            
+            //default
+            default:
+                
+                //set process
+                process = message->process;
+                
+                break;
+        }
+        
+        //init pid
+        self.pid = audit_token_to_pid(process->audit_token);
+        
+        //init ppid
+        self.ppid = process->ppid;
+        
+        //init uuid
+        self.uid = audit_token_to_euid(process->audit_token);
+        
+        //init path
+        self.path = convertStringToken(&process->executable->path);
+        
+        //extract/format code signing info
+        [self extractSigningInfo:process];
+        
+        //enum ancestors
+        [self enumerateAncestors];
+        
+    }
+    
+    return self;
+}
+
+//extract/format args
+-(void)extractArgs:(es_events_t *)event
+{
+    //number of args
+    uint32_t count = 0;
+    
+    //get # of args
+    count = es_exec_arg_count(&event->exec);
+    if(0 == count)
+    {
+        //bail
+        goto bail;
+    }
+    
+    //extact all args
+    for(uint32_t i = 0; i < count; i++)
+    {
+        //current arg
+        es_string_token_t currentArg = {0};
+        
+        //extract current arg
+        currentArg = es_exec_arg(&event->exec, i);
+        
+        //append
+        [self.arguments addObject:convertStringToken(&currentArg)];
+    }
+    
+bail:
+    
+    return;
+}
+
+//extract/format signing info
+-(void)extractSigningInfo:(es_process_t *)process
+{
+    //cd hash
+    NSMutableString* cdHash = nil;
+    
+    //alloc string for hash
+    cdHash = [NSMutableString string];
+    
+    //add flags
+    self.signingInfo[KEY_SIGNATURE_FLAGS] = [NSNumber numberWithUnsignedInt:process->codesigning_flags];
+    
+    //add signing id
+    self.signingInfo[KEY_SIGNATURE_IDENTIFIER] = convertStringToken(&process->signing_id);
+    
+    //add team id
+    self.signingInfo[KEY_SIGNATURE_TEAM_IDENTIFIER] = convertStringToken(&process->team_id);
+    
+    //add platform binary
+    self.signingInfo[KEY_SIGNATURE_PLATFORM_BINARY] = [NSNumber numberWithBool:process->is_platform_binary];
+    
+    //format cdhash
+    for(uint32_t i = 0; i<CS_CDHASH_LEN; i++)
+    {
+        //append
+        [cdHash appendFormat:@"%X", process->cdhash[i]];
+    }
+    
+    //add cdhash
+    self.signingInfo[KEY_SIGNATURE_CDHASH] = cdHash;
+    
+    return;
+}
+
+//generate list of ancestors
+-(void)enumerateAncestors
+{
+    //current process id
+    pid_t currentPID = -1;
+    
+    //parent pid
+    pid_t parentPID = -1;
+    
+    //add parent
+    if(-1 != self.ppid)
+    {
+        //add
+        [self.ancestors addObject:[NSNumber numberWithInt:self.ppid]];
+        
+        //set current to parent
+        currentPID = self.ppid;
+    }
+    //don't know parent
+    // just start with self
+    else
+    {
+        //start w/ self
+        currentPID = self.pid;
+    }
+    
+    //complete ancestry 
+    while(YES)
+    {
+        //get parent pid
+        parentPID = getParentID(currentPID);
+        if( (0 == parentPID) ||
+            (-1 == parentPID) ||
+            (currentPID == parentPID) )
+        {
+            //bail
+            break;
+        }
+        
+        //update
+        currentPID = parentPID;
+        
+        //add
+        [self.ancestors addObject:[NSNumber numberWithInt:parentPID]];
+    }
+    
+    return;
+}
+
+//for pretty printing
+-(NSString *)description
+{
+    //description
+    NSString* description = nil;
+    
+    //exec/fork events
+    // don't add exit code...
+    if(ES_EVENT_TYPE_NOTIFY_EXIT != self.event)
+    {
+        //pretty print
+        description =  [NSString stringWithFormat: @"pid: %d\npath: %@\nuid: %d\nargs: %@\nancestors: %@\nsigning info: %@", self.pid, self.path, self.uid, self.arguments, self.ancestors, self.signingInfo];
+    }
+    //exit event
+    // add exit code
+    else
+    {
+        description =  [NSString stringWithFormat: @"pid: %d\npath: %@\nuid: %d\nargs: %@\nancestors: %@\nsigning info: %@\nexit code: %d", self.pid, self.path, self.uid, self.arguments, self.ancestors, self.signingInfo, self.exit];
+    }
+    
+    return description;
+    
+}
+
+@end
+
+//helper function
+// get parent of arbitrary process
+pid_t getParentID(pid_t child)
+{
+    //parent id
+    pid_t parentID = -1;
+    
+    //kinfo_proc struct
+    struct kinfo_proc processStruct = {0};
+    
+    //size
+    size_t procBufferSize = 0;
+    
+    //mib
+    const u_int mibLength = 4;
+    
+    //syscall result
+    int sysctlResult = -1;
+    
+    //init buffer length
+    procBufferSize = sizeof(processStruct);
+    
+    //init mib
+    int mib[mibLength] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, child};
+    
+    //make syscall
+    sysctlResult = sysctl(mib, mibLength, &processStruct, &procBufferSize, NULL, 0);
+    
+    //check if got ppid
+    if( (noErr == sysctlResult) &&
+        (0 != procBufferSize) )
+    {
+        //save ppid
+        parentID = processStruct.kp_eproc.e_ppid;
+    }
+    
+    return parentID;
+}
+
