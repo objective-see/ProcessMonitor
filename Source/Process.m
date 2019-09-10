@@ -138,6 +138,9 @@ pid_t getParentID(pid_t child);
     //number of args
     uint32_t count = 0;
     
+    //argument
+    NSString* argument = nil;
+    
     //get # of args
     count = es_exec_arg_count(&event->exec);
     if(0 == count)
@@ -146,7 +149,7 @@ pid_t getParentID(pid_t child);
         goto bail;
     }
     
-    //extact all args
+    //extract all args
     for(uint32_t i = 0; i < count; i++)
     {
         //current arg
@@ -155,8 +158,13 @@ pid_t getParentID(pid_t child);
         //extract current arg
         currentArg = es_exec_arg(&event->exec, i);
         
-        //append
-        [self.arguments addObject:convertStringToken(&currentArg)];
+        //convert argument
+        argument = convertStringToken(&currentArg);
+        if(nil != argument)
+        {
+            //append
+            [self.arguments addObject:argument];
+        }
     }
     
 bail:
@@ -170,17 +178,33 @@ bail:
     //cd hash
     NSMutableString* cdHash = nil;
     
+    //signing id
+    NSString* signingID = nil;
+    
+    //team id
+    NSString* teamID = nil;
+    
     //alloc string for hash
     cdHash = [NSMutableString string];
     
     //add flags
     self.signingInfo[KEY_SIGNATURE_FLAGS] = [NSNumber numberWithUnsignedInt:process->codesigning_flags];
     
-    //add signing id
-    self.signingInfo[KEY_SIGNATURE_IDENTIFIER] = convertStringToken(&process->signing_id);
+    //convert/add signing id
+    signingID = convertStringToken(&process->signing_id);
+    if(nil != signingID)
+    {
+        //add
+        self.signingInfo[KEY_SIGNATURE_IDENTIFIER] = signingID;
+    }
     
-    //add team id
-    self.signingInfo[KEY_SIGNATURE_TEAM_IDENTIFIER] = convertStringToken(&process->team_id);
+    //convert/add team id
+    teamID = convertStringToken(&process->team_id);
+    if(nil != teamID)
+    {
+        //add
+        self.signingInfo[KEY_SIGNATURE_TEAM_IDENTIFIER] = teamID;
+    }
     
     //add platform binary
     self.signingInfo[KEY_SIGNATURE_PLATFORM_BINARY] = [NSNumber numberWithBool:process->is_platform_binary];
@@ -224,7 +248,7 @@ bail:
         currentPID = self.pid;
     }
     
-    //complete ancestry 
+    //complete ancestry
     while(YES)
     {
         //get parent pid

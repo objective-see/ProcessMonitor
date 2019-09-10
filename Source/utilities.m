@@ -14,13 +14,10 @@ NSString* convertStringToken(es_string_token_t* stringToken)
     //string
     NSString* string = nil;
     
-    //init to empty string
-    string = [NSString string];
-    
     //sanity check(s)
     if( (NULL == stringToken) ||
-        (0 == stringToken->length) ||
-        (NULL == stringToken->data) )
+        (NULL == stringToken->data) ||
+        (stringToken->length <= 0) )
     {
         //bail
         goto bail;

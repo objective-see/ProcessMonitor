@@ -18,30 +18,10 @@
 //endpoint
 es_client_t* endpointClient = nil;
 
-//process events of interest
-NSDictionary* eventsOfInterest = nil;
-
-
 //process events
 es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK, ES_EVENT_TYPE_NOTIFY_EXIT};
 
 @implementation ProcessMonitor
-
-//init
--(id)init
-{
-    //init super
-    self = [super init];
-    if(nil != self)
-    {
-        //init events of interest
-        eventsOfInterest = @{[NSNumber numberWithInt:ES_EVENT_TYPE_NOTIFY_EXEC]:@"ES_EVENT_TYPE_NOTIFY_EXEC",
-                            [NSNumber numberWithInt:ES_EVENT_TYPE_NOTIFY_FORK]:@"ES_EVENT_TYPE_NOTIFY_FORK",
-                            [NSNumber numberWithInt:ES_EVENT_TYPE_NOTIFY_EXIT]:@"ES_EVENT_TYPE_NOTIFY_EXIT"};
-        }
-    
-    return self;
-}
 
 //start monitoring
 -(BOOL)start:(ProcessCallbackBlock)callback
@@ -49,23 +29,8 @@ es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK
     //flag
     BOOL started = NO;
     
-    //events (as array)
-    es_event_type_t* events = NULL;
-    
     //result
     es_new_client_result_t result = 0;
-    
-    
-    //alloc events
-    events = malloc(sizeof(es_event_type_t) * eventsOfInterest.count);
-    
-    //init events
-    // es_* APIs expect a C-array...
-    for(int i = 0; i < eventsOfInterest.count; i++)
-    {
-        //add event
-        events[i] = [eventsOfInterest.allKeys[i] intValue];
-    }
     
     //sync
     @synchronized (self)
@@ -73,26 +38,11 @@ es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK
     
     //create client
     // callback invokes (user) callback for new processes
-    result = es_new_client(&endpointClient, ^(es_client_t *cleint, const es_message_t *message)
+    result = es_new_client(&endpointClient, ^(es_client_t *client, const es_message_t *message)
     {
         //new process event
         Process* process = nil;
         
-        //ignore non-notify messages
-        if(ES_ACTION_TYPE_NOTIFY != message->action_type)
-        {
-            //ignore
-            return;
-        }
-        
-        //ignore non-msg's of interest
-        if(nil == [eventsOfInterest objectForKey:[NSNumber numberWithInt:message->event_type]])
-        {
-            //ignore
-            return;
-        }
-        
-    
         //init process obj
         process = [[Process alloc] init:(es_message_t* _Nonnull)message];
         if(nil != process)
@@ -124,7 +74,7 @@ es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK
     }
     
     //subscribe
-    if(ES_RETURN_SUCCESS != es_subscribe(endpointClient, events, (u_int32_t)eventsOfInterest.count))
+    if(ES_RETURN_SUCCESS != es_subscribe(endpointClient, events, sizeof(events)/sizeof(events[0])))
     {
         //err msg
         NSLog(@"ERROR: es_subscribe() failed");
@@ -139,14 +89,6 @@ es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK
     started = YES;
     
 bail:
-    
-    //free events
-    if(NULL != events)
-    {
-        //free
-        free(events);
-        events = NULL;
-    }
     
     return started;
 }
@@ -164,7 +106,7 @@ bail:
     //unsubscribe & delete
     if(NULL != endpointClient)
     {
-       //unsubscribe
+       //unsubscribe 
        if(ES_RETURN_SUCCESS != es_unsubscribe_all(endpointClient))
        {
            //err msg
@@ -174,7 +116,7 @@ bail:
            goto bail;
        }
        
-       //delete
+       //delete client
        if(ES_RETURN_SUCCESS != es_delete_client(endpointClient))
        {
            //err msg

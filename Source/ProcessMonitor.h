@@ -16,7 +16,7 @@
 #define KEY_SIGNATURE_FLAGS @"csFlags"
 #define KEY_SIGNATURE_IDENTIFIER @"signatureIdentifier"
 #define KEY_SIGNATURE_TEAM_IDENTIFIER @"teamIdentifier"
-#define KEY_SIGNATURE_PLATFORM_BINARY @"isPlatforBinary"
+#define KEY_SIGNATURE_PLATFORM_BINARY @"isPlatformBinary"
 
 /* CLASSES */
 @class Process;
@@ -56,7 +56,7 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 @property u_int32_t event;
 
 //exit code
-@property u_int32_t exit;
+@property int exit;
 
 //path
 @property(nonatomic, retain)NSString* _Nullable path;
