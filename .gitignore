@@ -62,3 +62,8 @@ fastlane/test_output
 
 iOSInjectionProject/
 ProcessMonitor.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+Library/Library.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+ProcessMonitor.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+App/ProcessMonitor.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+App/ProcessMonitor.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+ProcessMonitor.xcworkspace/contents.xcworkspacedata

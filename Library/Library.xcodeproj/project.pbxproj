@@ -75,19 +75,20 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		CE91B73E231A0E6D003273AF /* ProcessMonitor */ = {
+		CE91B73E231A0E6D003273AF /* Library */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CE91B748231A0E6D003273AF /* Build configuration list for PBXNativeTarget "ProcessMonitor" */;
+			buildConfigurationList = CE91B748231A0E6D003273AF /* Build configuration list for PBXNativeTarget "Library" */;
 			buildPhases = (
 				CE91B73B231A0E6D003273AF /* Headers */,
 				CE91B73C231A0E6D003273AF /* Sources */,
 				CE91B73D231A0E6D003273AF /* Frameworks */,
+				CD3F5C3A234F870B00FE12C4 /* ShellScript */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = ProcessMonitor;
+			name = Library;
 			productName = processMonitor;
 			productReference = CE91B73F231A0E6D003273AF /* libProcessMonitor.a */;
 			productType = "com.apple.product-type.library.static";
@@ -106,7 +107,7 @@
 					};
 				};
 			};
-			buildConfigurationList = CE91B73A231A0E6D003273AF /* Build configuration list for PBXProject "ProcessMonitor" */;
+			buildConfigurationList = CE91B73A231A0E6D003273AF /* Build configuration list for PBXProject "Library" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -119,10 +120,30 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				CE91B73E231A0E6D003273AF /* ProcessMonitor */,
+				CE91B73E231A0E6D003273AF /* Library */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		CD3F5C3A234F870B00FE12C4 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#copy library into top-level releases folder\ncp $CODESIGNING_FOLDER_PATH $SRCROOT/Release/\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		CE91B73C231A0E6D003273AF /* Sources */ = {
@@ -252,7 +273,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = ProcessMonitor;
 				SKIP_INSTALL = YES;
 			};
 			name = Debug;
@@ -262,7 +283,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				EXECUTABLE_PREFIX = lib;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = ProcessMonitor;
 				SKIP_INSTALL = YES;
 			};
 			name = Release;
@@ -270,7 +291,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		CE91B73A231A0E6D003273AF /* Build configuration list for PBXProject "ProcessMonitor" */ = {
+		CE91B73A231A0E6D003273AF /* Build configuration list for PBXProject "Library" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CE91B746231A0E6D003273AF /* Debug */,
@@ -279,7 +300,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CE91B748231A0E6D003273AF /* Build configuration list for PBXNativeTarget "ProcessMonitor" */ = {
+		CE91B748231A0E6D003273AF /* Build configuration list for PBXNativeTarget "Library" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CE91B749231A0E6D003273AF /* Debug */,
