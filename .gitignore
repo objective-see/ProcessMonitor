@@ -47,4 +47,4 @@ Library/Library.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.pl
 ProcessMonitor.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 App/ProcessMonitor.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 App/ProcessMonitor.xcodeproj/project.xcworkspace/contents.xcworkspacedata
-ProcessMonitor.xcworkspace/contents.xcworkspacedata
+App/Release/*
