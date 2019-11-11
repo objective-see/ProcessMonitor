@@ -28,6 +28,7 @@
 		CD8B216F2366978D00D3FE6F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CD8B21712366994700D3FE6F /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		CD8B21722366994700D3FE6F /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		CDC8436C2378CF3300BB78D3 /* main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +69,7 @@
 				CD8B21712366994700D3FE6F /* AppDelegate.h */,
 				CD8B21722366994700D3FE6F /* AppDelegate.m */,
 				CD38A8482358B412004EBB67 /* Info.plist */,
+				CDC8436C2378CF3300BB78D3 /* main.h */,
 				CD38A8492358B412004EBB67 /* main.m */,
 				CD83DFE123663E71009B8DDE /* MainMenu.xib */,
 				CD38A84B2358B412004EBB67 /* ProcessMonitor.entitlements */,
@@ -166,7 +168,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#copy app into top-level releases folder\nexport\ncp -R $CODESIGNING_FOLDER_PATH $SRCROOT/Release/\n";
+			shellScript = "#copy app into Release/\ncp -R $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME $PROJECT_DIR/Release/\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -300,7 +302,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1.1.0;
 				DEVELOPMENT_TEAM = VBG97UB4TA;
 				ENABLE_HARDENED_RUNTIME = YES;
 				HEADER_SEARCH_PATHS = ../Library/Release;
@@ -310,6 +312,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = ../Library/Release;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.objective-see.processmonitor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Process Monitor";
@@ -324,7 +327,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1.1.0;
 				DEVELOPMENT_TEAM = VBG97UB4TA;
 				ENABLE_HARDENED_RUNTIME = YES;
 				HEADER_SEARCH_PATHS = ../Library/Release;
@@ -334,6 +337,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = ../Library/Release;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.objective-see.processmonitor";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Process Monitor";

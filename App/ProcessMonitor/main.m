@@ -6,19 +6,8 @@
 //  Copyright © 2019 Patrick Wardle. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+#import "main.h"
 #import "ProcessMonitor.h"
-
-/* FUNCTIONS */
-
-//print usage
-void usage(void);
-
-//monitor
-BOOL monitor(void);
-
-//prettify JSON
-NSString* prettifyJSON(NSString* output);
 
 int main(int argc, const char * argv[]) {
     
@@ -55,6 +44,16 @@ int main(int argc, const char * argv[]) {
             goto bail;
         }
         
+        //process (other) args
+        if(YES != processArgs(arguments))
+        {
+            //print usage
+            usage();
+            
+            //done
+            goto bail;
+        }
+        
         //go!
         if(YES != monitor())
         {
@@ -73,14 +72,69 @@ bail:
     return status;
 }
 
+//process args
+BOOL processArgs(NSArray* arguments)
+{
+    //flag
+    BOOL validArgs = YES;
+    
+    //index
+    NSUInteger index = 0;
+    
+    //init 'skipApple' flag
+    skipApple = [arguments containsObject:@"-skipApple"];
+    
+    //init 'prettyPrint' flag
+    prettyPrint = [arguments containsObject:@"-pretty"];
+    
+    //extract value for 'filterBy'
+    index = [arguments indexOfObject:@"-filter"];
+    if(NSNotFound != index)
+    {
+        //inc
+        index++;
+        
+        //sanity check
+        // make sure name comes after
+        if(index >= arguments.count)
+        {
+            //invalid
+            validArgs = NO;
+            
+            //bail
+            goto bail;
+        }
+        
+        //grab filter name
+        filterBy = [arguments objectAtIndex:index];
+    }
+
+bail:
+    
+    return validArgs;
+}
+
 //print usage
 void usage()
 {
+    //name
+    NSString* name = nil;
+    
+    //version
+    NSString* version = nil;
+    
+    //extract name
+    name = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleName"];
+    
+    //extract version
+    version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
+
     //usage
-    printf("\nPROCESS MONITOR USAGE:\n");
-    printf(" -h or -help  display this usage info\n");
-    printf(" -pretty      JSON output is 'pretty-printed'\n");
-    printf(" -skipApple   ignore Apple (platform) processes \n\n");
+    printf("\n%s (v%s) usage:\n", name.UTF8String, version.UTF8String);
+    printf(" -h or -help      display this usage info\n");
+    printf(" -pretty          JSON output is 'pretty-printed'\n");
+    printf(" -skipApple       ignore Apple (platform) processes \n");
+    printf(" -filter <name>   show events matching process name\n\n");
     
     return;
 }
@@ -100,15 +154,27 @@ BOOL monitor()
         // for now, we just print out the event and process object
         
         //ingore apple?
-        if( (YES == [[[NSProcessInfo processInfo] arguments] containsObject:@"-skipApple"]) &&
+        if( (YES == skipApple) &&
             (YES == [process.signingInfo[KEY_SIGNATURE_PLATFORM_BINARY] boolValue]))
         {
             //ignore
             return;
         }
+        
+        //filter
+        // and no match? skip
+        if(0 != filterBy.length)
+        {
+            //check file paths & process
+            if(YES != [process.path hasSuffix:filterBy])
+            {
+                //ignore
+                return;
+            }
+        }
             
         //pretty print?
-        if(YES == [[[NSProcessInfo processInfo] arguments] containsObject:@"-pretty"])
+        if(YES == prettyPrint)
         {
             //make me pretty!
             printf("%s\n", prettifyJSON(process.description).UTF8String);

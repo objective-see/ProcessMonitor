@@ -141,7 +141,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#copy library into top-level releases folder\ncp $CODESIGNING_FOLDER_PATH $SRCROOT/Release/\n";
+			shellScript = "#copy header file and library into Release/\ncp $PROJECT_DIR/Source/ProcessMonitor.h $PROJECT_DIR/Release/\ncp $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME $PROJECT_DIR/Release/\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
