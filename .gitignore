@@ -43,8 +43,7 @@ xcuserdata/
 
 Carthage/Build
 
-Library/Library.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 ProcessMonitor.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+Library/Library.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 App/ProcessMonitor.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
-App/ProcessMonitor.xcodeproj/project.xcworkspace/contents.xcworkspacedata
-App/Release/*
+
