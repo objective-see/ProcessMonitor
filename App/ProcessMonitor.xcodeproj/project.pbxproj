@@ -97,7 +97,6 @@
 				CD38A8392358B410004EBB67 /* Sources */,
 				CD38A83A2358B410004EBB67 /* Frameworks */,
 				CD38A83B2358B410004EBB67 /* Resources */,
-				CD8B21752366A5A600D3FE6F /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -151,26 +150,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		CD8B21752366A5A600D3FE6F /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "#copy app into Release/\ncp -R $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME $PROJECT_DIR/Release/\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		CD38A8392358B410004EBB67 /* Sources */ = {

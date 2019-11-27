@@ -142,6 +142,9 @@ void usage()
 //monitor
 BOOL monitor()
 {
+    //(process) events of interest
+    es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK, ES_EVENT_TYPE_NOTIFY_EXIT};
+    
     //init monitor
     ProcessMonitor* procMon = [[ProcessMonitor alloc] init];
     
@@ -187,8 +190,9 @@ BOOL monitor()
     };
         
     //start monitoring
-    // pass in block for events
-    return [procMon start:block];
+    // pass in events, count, and callback block for events
+    return [procMon start:events count:sizeof(events)/sizeof(events[0]) callback:block];
+    
 }
 
 //prettify JSON

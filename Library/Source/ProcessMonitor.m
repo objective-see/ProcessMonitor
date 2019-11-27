@@ -18,13 +18,11 @@
 //endpoint
 es_client_t* endpointClient = nil;
 
-//process events
-es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK, ES_EVENT_TYPE_NOTIFY_EXIT};
-
 @implementation ProcessMonitor
 
 //start monitoring
--(BOOL)start:(ProcessCallbackBlock)callback
+// pass in events of interest, count of said events, and callback
+-(BOOL)start:(es_event_type_t*)events count:(uint32_t)count callback:(ProcessCallbackBlock)callback
 {
     //flag
     BOOL started = NO;
@@ -96,7 +94,7 @@ es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK
     }
     
     //subscribe
-    if(ES_RETURN_SUCCESS != es_subscribe(endpointClient, events, sizeof(events)/sizeof(events[0])))
+    if(ES_RETURN_SUCCESS != es_subscribe(endpointClient, events, count))
     {
         //err msg
         NSLog(@"ERROR: es_subscribe() failed");

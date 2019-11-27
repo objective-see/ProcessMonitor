@@ -24,7 +24,7 @@ NSString* convertStringToken(es_string_token_t* stringToken)
     }
         
     //convert to data, then to string
-    string = [NSString stringWithUTF8String:[[NSData dataWithBytes:stringToken->data length:stringToken->length] bytes]];
+    string = [[NSString alloc] initWithBytes:stringToken->data length:stringToken->length encoding:NSUTF8StringEncoding];
     
 bail:
     
