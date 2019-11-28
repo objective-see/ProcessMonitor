@@ -309,6 +309,9 @@ bail:
             break;
     }
     
+    //add timestamp
+    [description appendFormat:@"\"timestamp\":\"%@\",", self.timestamp];
+    
     //start process
     [description appendString:@"\"process\":{"];
     
