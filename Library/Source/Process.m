@@ -210,10 +210,10 @@ bail:
     self.signingInfo[KEY_SIGNATURE_PLATFORM_BINARY] = [NSNumber numberWithBool:process->is_platform_binary];
     
     //format cdhash
-    for(uint32_t i = 0; i<CS_CDHASH_LEN; i++)
+    for(uint32_t i=0; i<CS_CDHASH_LEN; i++)
     {
         //append
-        [cdHash appendFormat:@"%X", process->cdhash[i]];
+        [cdHash appendFormat:@"%02X", process->cdhash[i]];
     }
     
     //add cdhash
@@ -354,7 +354,7 @@ bail:
     //add ancestors
     [description appendFormat:@"\"ancestors\":["];
     
-    //add all arguments
+    //add each ancestor
     for(NSNumber* ancestor in self.ancestors)
     {
         //add
