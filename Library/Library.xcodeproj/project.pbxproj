@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CD68366B239447A500CF19C1 /* signing.h in Headers */ = {isa = PBXBuildFile; fileRef = CD683669239447A500CF19C1 /* signing.h */; };
+		CD68366C239447A500CF19C1 /* signing.m in Sources */ = {isa = PBXBuildFile; fileRef = CD68366A239447A500CF19C1 /* signing.m */; };
 		CE532DF8231C78E500B7DDD6 /* utilities.m in Sources */ = {isa = PBXBuildFile; fileRef = CE532DF7231C78E500B7DDD6 /* utilities.m */; };
 		CE91B743231A0E6D003273AF /* ProcessMonitor.h in Headers */ = {isa = PBXBuildFile; fileRef = CE91B742231A0E6D003273AF /* ProcessMonitor.h */; };
 		CE91B745231A0E6D003273AF /* ProcessMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = CE91B744231A0E6D003273AF /* ProcessMonitor.m */; };
@@ -14,6 +16,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		CD683669239447A500CF19C1 /* signing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = signing.h; sourceTree = "<group>"; };
+		CD68366A239447A500CF19C1 /* signing.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = signing.m; sourceTree = "<group>"; };
 		CE532DF7231C78E500B7DDD6 /* utilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = utilities.m; sourceTree = "<group>"; };
 		CE532DF9231C791B00B7DDD6 /* utilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utilities.h; sourceTree = "<group>"; };
 		CE91B73F231A0E6D003273AF /* libProcessMonitor.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libProcessMonitor.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -55,6 +59,8 @@
 				CE91B742231A0E6D003273AF /* ProcessMonitor.h */,
 				CE91B744231A0E6D003273AF /* ProcessMonitor.m */,
 				CE91B74C231A129D003273AF /* Process.m */,
+				CD683669239447A500CF19C1 /* signing.h */,
+				CD68366A239447A500CF19C1 /* signing.m */,
 				CE532DF7231C78E500B7DDD6 /* utilities.m */,
 				CE532DF9231C791B00B7DDD6 /* utilities.h */,
 			);
@@ -68,6 +74,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD68366B239447A500CF19C1 /* signing.h in Headers */,
 				CE91B743231A0E6D003273AF /* ProcessMonitor.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -153,6 +160,7 @@
 				CE532DF8231C78E500B7DDD6 /* utilities.m in Sources */,
 				CE91B745231A0E6D003273AF /* ProcessMonitor.m in Sources */,
 				CE91B74E231A129D003273AF /* Process.m in Sources */,
+				CD68366C239447A500CF19C1 /* signing.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

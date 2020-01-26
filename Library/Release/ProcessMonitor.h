@@ -12,11 +12,21 @@
 /* CONSTS */
 
 //code signing keys
-#define KEY_SIGNATURE_CDHASH @"cdHash"
 #define KEY_SIGNATURE_FLAGS @"csFlags"
-#define KEY_SIGNATURE_IDENTIFIER @"signatureIdentifier"
-#define KEY_SIGNATURE_TEAM_IDENTIFIER @"teamIdentifier"
-#define KEY_SIGNATURE_PLATFORM_BINARY @"isPlatformBinary"
+#define KEY_SIGNATURE_STATUS @"signatureStatus"
+#define KEY_SIGNATURE_SIGNER @"signatureSigner"
+#define KEY_SIGNATURE_IDENTIFIER @"signatureID"
+#define KEY_SIGNATURE_TEAM_IDENTIFIER @"teamID"
+#define KEY_SIGNATURE_AUTHORITIES @"signatureAuthorities"
+
+//code sign options
+enum csOptions{csNone, csStatic, csDynamic};
+
+//signers
+enum Signer{None, Apple, AppStore, DevID, AdHoc};
+
+//cs options
+#define CS_STATIC_CHECK YES
 
 /* CLASSES */
 @class Process;
@@ -29,8 +39,8 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 @interface ProcessMonitor : NSObject
 
 //start monitoring
-// pass in events of interest, count of said events, and callback
--(BOOL)start:(es_event_type_t* _Nonnull)events count:(uint32_t)count callback:(ProcessCallbackBlock _Nonnull)callback;
+// pass in events of interest, count of said events, flag for codesigning, and callback
+-(BOOL)start:(es_event_type_t* _Nonnull)events count:(uint32_t)count csOption:(NSUInteger)csOption callback:(ProcessCallbackBlock _Nonnull)callback;
 
 //stop monitoring
 -(BOOL)stop;
@@ -68,7 +78,23 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 //ancestors
 @property(nonatomic, retain)NSMutableArray* _Nonnull ancestors;
 
+//platform binary
+@property(nonatomic, retain)NSNumber* _Nonnull isPlatformBinary;
+
+//csflags
+@property(nonatomic, retain)NSNumber* _Nonnull csFlags;
+
+//cd hash
+@property(nonatomic, retain)NSMutableString* _Nonnull cdHash;
+
+//signing ID
+@property(nonatomic, retain)NSString* _Nonnull signingID;
+
+//team ID
+@property(nonatomic, retain)NSString* _Nonnull teamID;
+
 //signing info
+// manually generated via CS APIs if `codesign:TRUE` is set
 @property(nonatomic, retain)NSMutableDictionary* _Nonnull signingInfo;
 
 //timestamp
@@ -77,6 +103,7 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 /* METHODS */
 
 //init
--(id _Nullable)init:(es_message_t* _Nonnull)message;
+// flag controls code signing options
+-(id _Nullable)init:(es_message_t* _Nonnull)message csOption:(NSUInteger)csOption;
 
 @end

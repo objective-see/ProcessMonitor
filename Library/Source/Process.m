@@ -10,6 +10,7 @@
 #import <bsm/libbsm.h>
 #import <sys/sysctl.h>
 
+#import "signing.h"
 #import "utilities.h"
 #import "ProcessMonitor.h"
 
@@ -32,7 +33,8 @@ pid_t getParentID(pid_t child);
 @synthesize signingInfo;
 
 //init
--(id)init:(es_message_t*)message
+// flag controls code signing options
+-(id)init:(es_message_t*)message csOption:(NSUInteger)csOption
 {
     //init super
     self = [super init];
@@ -41,11 +43,15 @@ pid_t getParentID(pid_t child);
         //process from msg
         es_process_t* process = NULL;
         
+        //string value
+        // used for various conversions
+        NSString* string = nil;
+        
         //alloc array for args
         self.arguments = [NSMutableArray array];
         
         //alloc array for parents
-        self.ancestors  = [NSMutableArray array];
+        self.ancestors = [NSMutableArray array];
         
         //alloc dictionary for signing info
         self.signingInfo = [NSMutableDictionary dictionary];
@@ -120,16 +126,60 @@ pid_t getParentID(pid_t child);
         
         //init path
         self.path = convertStringToken(&process->executable->path);
+    
+        //add cs flags
+        self.csFlags = [NSNumber numberWithUnsignedInt:process->codesigning_flags];
         
-        //extract/format code signing info
-        [self extractSigningInfo:process];
+        //convert/add signing id
+        if(nil != (string = convertStringToken(&process->signing_id)))
+        {
+            //add
+            self.signingID = string;
+        }
         
+        //convert/add team id
+        if(nil != (string = convertStringToken(&process->team_id)))
+        {
+            //add
+            self.teamID = string;
+        }
+        
+        //add platform binary
+        self.isPlatformBinary = [NSNumber numberWithBool:process->is_platform_binary];
+        
+        //alloc
+        self.cdHash = [NSMutableString string];
+        
+        //format cdhash
+        for(uint32_t i=0; i<CS_CDHASH_LEN; i++)
+        {
+            //append
+            [self.cdHash appendFormat:@"%02X", process->cdhash[i]];
+        }
+        
+        //when specified
+        // generate full code signing info
+        if(csNone != csOption)
+        {
+            //generate code signing info
+            [self generateCSInfo:csOption];
+        }
+    
         //enum ancestors
         [self enumerateAncestors];
-        
     }
     
     return self;
+}
+
+//generate code signing info
+// sets 'signingInfo' iVar
+-(void)generateCSInfo:(NSUInteger)csOption
+{
+    //generate via helper function
+    self.signingInfo = generateSigningInfo(self, csOption, kSecCSDefaultFlags);
+    
+    return;
 }
 
 //extract/format args
@@ -168,56 +218,6 @@ pid_t getParentID(pid_t child);
     }
     
 bail:
-    
-    return;
-}
-
-//extract/format signing info
--(void)extractSigningInfo:(es_process_t *)process
-{
-    //cd hash
-    NSMutableString* cdHash = nil;
-    
-    //signing id
-    NSString* signingID = nil;
-    
-    //team id
-    NSString* teamID = nil;
-    
-    //alloc string for hash
-    cdHash = [NSMutableString string];
-    
-    //add flags
-    self.signingInfo[KEY_SIGNATURE_FLAGS] = [NSNumber numberWithUnsignedInt:process->codesigning_flags];
-    
-    //convert/add signing id
-    signingID = convertStringToken(&process->signing_id);
-    if(nil != signingID)
-    {
-        //add
-        self.signingInfo[KEY_SIGNATURE_IDENTIFIER] = signingID;
-    }
-    
-    //convert/add team id
-    teamID = convertStringToken(&process->team_id);
-    if(nil != teamID)
-    {
-        //add
-        self.signingInfo[KEY_SIGNATURE_TEAM_IDENTIFIER] = teamID;
-    }
-    
-    //add platform binary
-    self.signingInfo[KEY_SIGNATURE_PLATFORM_BINARY] = [NSNumber numberWithBool:process->is_platform_binary];
-    
-    //format cdhash
-    for(uint32_t i=0; i<CS_CDHASH_LEN; i++)
-    {
-        //append
-        [cdHash appendFormat:@"%02X", process->cdhash[i]];
-    }
-    
-    //add cdhash
-    self.signingInfo[KEY_SIGNATURE_CDHASH] = cdHash;
     
     return;
 }
@@ -313,108 +313,178 @@ bail:
     [description appendFormat:@"\"timestamp\":\"%@\",", self.timestamp];
     
     //start process
-    [description appendString:@"\"process\":{"];
+       [description appendString:@"\"process\":{"];
+       
+       //add pid, path, etc
+       [description appendFormat: @"\"pid\":%d,\"path\":\"%@\",\"uid\":%d,",self.pid, self.path, self.uid];
+       
+       //arguments
+       if(0 != self.arguments.count)
+       {
+           //start list
+           [description appendFormat:@"\"arguments\":["];
+           
+           //add all arguments
+           for(NSString* argument in self.arguments)
+           {
+               //add
+               [description appendFormat:@"\"%@\",", [argument stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""]];
+           }
+           
+           //remove last ','
+           if(YES == [description hasSuffix:@","])
+           {
+               //remove
+               [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+           }
+           
+           //terminate list
+           [description appendString:@"],"];
+       }
+       //no args
+       else
+       {
+           //add empty list
+           [description appendFormat:@"\"arguments\":[],"];
+       }
+       
+       //add ppid
+       [description appendFormat: @"\"ppid\":%d," ,self.ppid];
+       
+       //add ancestors
+       [description appendFormat:@"\"ancestors\":["];
+       
+       //add each ancestor
+       for(NSNumber* ancestor in self.ancestors)
+       {
+           //add
+           [description appendFormat:@"%d,", ancestor.unsignedIntValue];
+       }
+       
+       //remove last ','
+       if(YES == [description hasSuffix:@","])
+       {
+           //remove
+           [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+       }
+       
+       //terminate list
+       [description appendString:@"],"];
+       
+       //signing info (reported)
+       [description appendString:@"\"signing info (reported)\":{"];
     
-    //add pid, path, etc
-    [description appendFormat: @"\"pid\":%d,\"path\":\"%@\",\"uid\":%d," ,self.pid, self.path, self.uid];
+       //add cs flags, signing id, team id, etc
+       [description appendFormat: @"\"csFlags\":%d,\"platformBinary\":%d,\"signingID\":\"%@\",\"teamID\":\"%@\",\"cdHash\":\"%@\",", self.csFlags.intValue, self.isPlatformBinary.intValue, self.signingID, self.teamID, self.cdHash];
     
-    //arguments
-    if(0 != self.arguments.count)
-    {
-        //start list
-        [description appendFormat:@"\"arguments\":["];
-        
-        //add all arguments
-        for(NSString* argument in self.arguments)
-        {
-            //add
-            [description appendFormat:@"\"%@\",", [argument stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""]];
-        }
-        
-        //remove last ','
-        if(YES == [description hasSuffix:@","])
-        {
-            //remove
-            [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
-        }
-        
-        //terminate list
-        [description appendString:@"],"];
-    }
-    //no args
-    else
-    {
-        //add empty list
-        [description appendFormat:@"\"arguments\":[],"];
-    }
+       //terminate dictionary
+       [description appendString:@"},"];
     
-    //add ppid
-    [description appendFormat: @"\"ppid\":%d," ,self.ppid];
-    
-    //add ancestors
-    [description appendFormat:@"\"ancestors\":["];
-    
-    //add each ancestor
-    for(NSNumber* ancestor in self.ancestors)
-    {
-        //add
-        [description appendFormat:@"%d,", ancestor.unsignedIntValue];
-    }
-    
-    //remove last ','
-    if(YES == [description hasSuffix:@","])
-    {
-        //remove
-        [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
-    }
-    
-    //terminate list
-    [description appendString:@"],"];
-    
-    //signing info
-    [description appendString:@"\"signing info\":{"];
-    
-    //add all key/value pairs from signing info
-    for(NSString* key in self.signingInfo)
-    {
-        //value
-        id value = self.signingInfo[key];
-        
-        //number?
-        // add as is
-        if(YES == [value isKindOfClass:[NSNumber class]])
-        {
-            //add
-            [description appendFormat:@"\"%@\":%@,", key, value];
-        }
-        //otherwise, escape
-        else
-        {
-            //add
-            [description appendFormat:@"\"%@\":\"%@\",", key, value];
-        }
-    }
-
-    //remove last ','
-    if(YES == [description hasSuffix:@","])
-    {
-       //remove
-       [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
-    }
-    
-    //terminate dictionary
-    [description appendString:@"}"];
-    
-    //exit event?
-    // add exit code
-    if(ES_EVENT_TYPE_NOTIFY_EXIT == self.event)
-    {
-        //add exit
-        [description appendFormat:@",\"exit code\":%d", self.exit];
-    }
-    
-    //terminate process
-    [description appendString:@"}"];
+       //signing info
+       [description appendString:@"\"signing info (computed)\":{"];
+       
+       //add all key/value pairs from signing info
+       for(NSString* key in self.signingInfo)
+       {
+           //value
+           id value = self.signingInfo[key];
+           
+           //handle `KEY_SIGNATURE_SIGNER`
+           if(YES == [key isEqualToString:KEY_SIGNATURE_SIGNER])
+           {
+               //convert to pritable
+               switch ([value intValue]) {
+               
+                   //'None'
+                   case None:
+                       [description appendFormat:@"\"%@\":\"%@\",", key, @"none"];
+                       break;
+                       
+                   //'Apple'
+                   case Apple:
+                       [description appendFormat:@"\"%@\":\"%@\",", key, @"Apple"];
+                       break;
+                   
+                   //'App Store'
+                   case AppStore:
+                       [description appendFormat:@"\"%@\":\"%@\",", key, @"App Store"];
+                       break;
+                       
+                   //'Developer ID'
+                   case DevID:
+                       [description appendFormat:@"\"%@\":\"%@\",", key, @"Developer ID"];
+                       break;
+       
+                   //'AdHoc'
+                   case AdHoc:
+                      [description appendFormat:@"\"%@\":\"%@\",", key, @"AdHoc"];
+                      break;
+                       
+                   default:
+                       break;
+               }
+           }
+           
+           //number?
+           // add as is
+           else if(YES == [value isKindOfClass:[NSNumber class]])
+           {
+               //add
+               [description appendFormat:@"\"%@\":%@,", key, value];
+           }
+           //array
+           else if(YES == [value isKindOfClass:[NSArray class]])
+           {
+               //start
+               [description appendFormat:@"\"%@\":[", key];
+               
+               //add each item
+               [value enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL * _Nonnull stop) {
+                   
+                   //add
+                   [description appendFormat:@"\"%@\"", obj];
+                   
+                   //add ','
+                   if(index != ((NSArray*)value).count-1)
+                   {
+                       //add
+                       [description appendString:@","];
+                   }
+                   
+               }];
+               
+               //terminate
+               [description appendString:@"],"];
+           }
+           //otherwise
+           // just escape it
+           else
+           {
+               //add
+               [description appendFormat:@"\"%@\":\"%@\",", key, value];
+           }
+       }
+       
+       //remove last ','
+       if(YES == [description hasSuffix:@","])
+       {
+          //remove
+          [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+       }
+       
+       //terminate dictionary
+       [description appendString:@"}"];
+       
+       //exit event?
+       // add exit code
+       if(ES_EVENT_TYPE_NOTIFY_EXIT == self.event)
+       {
+           //add exit
+           [description appendFormat:@",\"exit code\":%d", self.exit];
+       }
+       
+       //terminate process
+       [description appendString:@"}"];
     
     //terminate entire JSON
     [description appendString:@"}"];

@@ -29,5 +29,4 @@ NSString* convertStringToken(es_string_token_t* stringToken)
 bail:
     
     return string;
-    
 }

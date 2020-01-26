@@ -21,8 +21,8 @@ es_client_t* endpointClient = nil;
 @implementation ProcessMonitor
 
 //start monitoring
-// pass in events of interest, count of said events, and callback
--(BOOL)start:(es_event_type_t*)events count:(uint32_t)count callback:(ProcessCallbackBlock)callback
+// pass in events of interest, count of said events, flag for codesigning, and callback
+-(BOOL)start:(es_event_type_t*)events count:(uint32_t)count csOption:(NSUInteger)csOption callback:(ProcessCallbackBlock)callback
 {
     //flag
     BOOL started = NO;
@@ -42,13 +42,13 @@ es_client_t* endpointClient = nil;
         Process* process = nil;
         
         //init process obj
-        process = [[Process alloc] init:(es_message_t* _Nonnull)message];
+        // do static check as well
+        process = [[Process alloc] init:(es_message_t* _Nonnull)message csOption:csOption];
         if(nil != process)
         {
             //invoke user callback
             callback(process);
         }
-    
     });
         
     //error?
