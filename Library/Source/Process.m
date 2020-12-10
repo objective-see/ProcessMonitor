@@ -3,7 +3,7 @@
 //  ProcessMonitor
 //
 //  Created by Patrick Wardle on 9/1/19.
-//  Copyright © 2019 Objective-See. All rights reserved.
+//  Copyright © 2020 Objective-See. All rights reserved.
 //
 
 #import <libproc.h>
@@ -13,6 +13,10 @@
 #import "signing.h"
 #import "utilities.h"
 #import "ProcessMonitor.h"
+
+//hash length
+// from: cs_blobs.h
+#define CS_CDHASH_LEN 20
 
 /* FUNCTIONS */
 
@@ -147,16 +151,9 @@ pid_t getParentID(pid_t child);
         //add platform binary
         self.isPlatformBinary = [NSNumber numberWithBool:process->is_platform_binary];
         
-        //alloc
-        self.cdHash = [NSMutableString string];
-        
-        //format cdhash
-        for(uint32_t i=0; i<CS_CDHASH_LEN; i++)
-        {
-            //append
-            [self.cdHash appendFormat:@"%02X", process->cdhash[i]];
-        }
-        
+        //save cd hash
+        self.cdHash = [[NSString alloc] initWithData:[NSData dataWithBytes:(const void *)process->cdhash length:sizeof(uint8_t)*CS_CDHASH_LEN] encoding:NSUTF8StringEncoding];
+               
         //when specified
         // generate full code signing info
         if(csNone != csOption)
@@ -375,7 +372,7 @@ bail:
        [description appendString:@"\"signing info (reported)\":{"];
     
        //add cs flags, signing id, team id, etc
-       [description appendFormat: @"\"csFlags\":%d,\"platformBinary\":%d,\"signingID\":\"%@\",\"teamID\":\"%@\",\"cdHash\":\"%@\",", self.csFlags.intValue, self.isPlatformBinary.intValue, self.signingID, self.teamID, self.cdHash];
+       [description appendFormat: @"\"csFlags\":%d,\"platformBinary\":%d,\"signingID\":\"%@\",\"teamID\":\"%@\",\"cdHash\":\"%@\"", self.csFlags.intValue, self.isPlatformBinary.intValue, self.signingID, self.teamID, self.cdHash];
     
        //terminate dictionary
        [description appendString:@"},"];

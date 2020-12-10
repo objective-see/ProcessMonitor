@@ -3,7 +3,7 @@
 //  ProcessMonitor
 //
 //  Created by Patrick Wardle on 9/1/19.
-//  Copyright © 2019 Objective-See. All rights reserved.
+//  Copyright © 2020 Objective-See. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -85,7 +85,7 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 @property(nonatomic, retain)NSNumber* _Nonnull csFlags;
 
 //cd hash
-@property(nonatomic, retain)NSMutableString* _Nonnull cdHash;
+@property(nonatomic, retain)NSString* _Nonnull cdHash;
 
 //signing ID
 @property(nonatomic, retain)NSString* _Nonnull signingID;

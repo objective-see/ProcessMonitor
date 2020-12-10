@@ -17,34 +17,9 @@ DerivedData/
 !default.perspectivev3
 xcuserdata/
 
-## Other
-*.moved-aside
-*.xccheckout
-*.xcscmblueprint
-
-## Obj-C/Swift specific
-*.hmap
-*.ipa
-*.dSYM.zip
-*.dSYM
-
-# CocoaPods
-#
-# We recommend against adding the Pods directory to your .gitignore. However
-# you should judge for yourself, the pros and cons are mentioned at:
-# https://guides.cocoapods.org/using/using-cocoapods.html#should-i-check-the-pods-directory-into-source-control
-#
-# Pods/
-
-# Carthage
-#
-# Add this line if you want to avoid checking in source code from Carthage dependencies.
-# Carthage/Checkouts
-
-Carthage/Build
-
 ProcessMonitor.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 Library/Library.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 App/ProcessMonitor.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 
-App/Release/ProcessMonitor.app
+.DS_Store
+.DS_Store?

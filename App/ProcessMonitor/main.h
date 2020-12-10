@@ -3,7 +3,7 @@
 //  ProcessMonitor
 //
 //  Created by Patrick Wardle on 11/10/19.
-//  Copyright © 2019 Patrick Wardle. All rights reserved.
+//  Copyright © 2020 Patrick Wardle. All rights reserved.
 //
 
 #ifndef main_h

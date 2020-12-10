@@ -3,7 +3,7 @@
 //  ProcessMonitor
 //
 //  Created by Patrick Wardle on 10/17/19.
-//  Copyright © 2019 Patrick Wardle. All rights reserved.
+//  Copyright © 2020 Patrick Wardle. All rights reserved.
 //
 
 #import "AppDelegate.h"
@@ -31,6 +31,8 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     
+    //set first responder (close button)
+    [self.window makeFirstResponder:[self.window.contentView viewWithTag:1]];
 }
 
 //exit on window close
@@ -38,11 +40,19 @@
     return YES;
 }
 
-//open 'user guide'
-- (IBAction)moreInfo:(id)sender {
+//close app
+-(IBAction)close:(id)sender {
     
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:PRODUCT_URL]];
+    //close
+    // will trigger exit
+    [self.window close];
 }
 
+//open product documentation
+- (IBAction)moreInfo:(id)sender {
+    
+    //open
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:PRODUCT_URL]];
+}
 
 @end
