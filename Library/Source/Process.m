@@ -350,7 +350,7 @@ bail:
     else
     {
        //add empty list
-       [description appendFormat:@"\"arguments NULL\":[1],"];
+       [description appendFormat:@"\"arguments\":[],"];
     }
 
     //add ppid
