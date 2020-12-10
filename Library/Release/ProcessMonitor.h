@@ -85,7 +85,7 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 @property(nonatomic, retain)NSNumber* _Nonnull csFlags;
 
 //cd hash
-@property(nonatomic, retain)NSString* _Nonnull cdHash;
+@property(nonatomic, retain)NSData* _Nonnull cdHash;
 
 //signing ID
 @property(nonatomic, retain)NSString* _Nonnull signingID;
