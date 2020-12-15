@@ -29,14 +29,15 @@
     return;
 }
 
-- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+//make close button first responder
+-(void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     
-    //set first responder (close button)
+    //first responder
     [self.window makeFirstResponder:[self.window.contentView viewWithTag:1]];
 }
 
 //exit on window close
-- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication {
+-(BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication {
     return YES;
 }
 
@@ -49,7 +50,7 @@
 }
 
 //open product documentation
-- (IBAction)moreInfo:(id)sender {
+-(IBAction)moreInfo:(id)sender {
     
     //open
     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:PRODUCT_URL]];

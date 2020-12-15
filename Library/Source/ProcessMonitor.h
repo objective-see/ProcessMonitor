@@ -69,6 +69,9 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 //exit code
 @property int exit;
 
+//name
+@property(nonatomic, retain)NSString* _Nullable name;
+
 //path
 @property(nonatomic, retain)NSString* _Nullable path;
 

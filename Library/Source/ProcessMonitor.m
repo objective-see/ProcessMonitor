@@ -15,8 +15,12 @@
 #import <Foundation/Foundation.h>
 #import <EndpointSecurity/EndpointSecurity.h>
 
-//endpoint
+//endpoint client
 es_client_t* endpointClient = nil;
+
+//pointer to function
+// responsibility_get_pid_responsible_for_pid()
+pid_t (*getRPID)(pid_t pid) = NULL;
 
 @implementation ProcessMonitor
 

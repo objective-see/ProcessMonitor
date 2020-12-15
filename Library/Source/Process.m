@@ -6,6 +6,7 @@
 //  Copyright © 2020 Objective-See. All rights reserved.
 //
 
+#import <dlfcn.h>
 #import <libproc.h>
 #import <bsm/libbsm.h>
 #import <sys/sysctl.h>
@@ -17,6 +18,11 @@
 //hash length
 // from: cs_blobs.h
 #define CS_CDHASH_LEN 20
+
+/* GLOBALS */
+
+//responsbile pid
+extern pid_t (*getRPID)(pid_t pid);
 
 /* FUNCTIONS */
 
@@ -59,6 +65,9 @@ pid_t getParentID(pid_t child);
         
         //alloc dictionary for signing info
         self.signingInfo = [NSMutableDictionary dictionary];
+        
+        //get function pointer
+        getRPID = dlsym(RTLD_NEXT, "responsibility_get_pid_responsible_for_pid");
         
         //init exit
         self.exit = -1;
@@ -131,6 +140,9 @@ pid_t getParentID(pid_t child);
         
         //init path
         self.path = convertStringToken(&process->executable->path);
+        
+        //now generate name
+        self.name = [self generateName];
     
         //add cs flags
         self.csFlags = [NSNumber numberWithUnsignedInt:process->codesigning_flags];
@@ -178,6 +190,51 @@ pid_t getParentID(pid_t child);
     self.signingInfo = generateSigningInfo(self, csOption, kSecCSDefaultFlags);
     
     return;
+}
+
+//get process' name
+// either via app bundle, or path
+-(NSString*)generateName
+{
+    //name
+    NSString* name = nil;
+    
+    //app path
+    NSString* appPath = nil;
+    
+    //app bundle
+    NSBundle* appBundle = nil;
+    
+    //convert path to app path
+    // generally, <blah.app>/Contents/MacOS/blah
+    appPath = [[[self.path stringByDeletingLastPathComponent] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+    if(YES != [appPath hasSuffix:@".app"])
+    {
+        //bail
+        goto bail;
+    }
+    
+    //try load bundle
+    // and verify it's the 'right' bundle
+    appBundle = [NSBundle bundleWithPath:appPath];
+    if( (nil != appBundle) &&
+        (YES == [appBundle.executablePath isEqualToString:self.path]) )
+    {
+        //grab name from app's bundle
+        name = [appBundle infoDictionary][@"CFBundleDisplayName"];
+    }
+    
+bail:
+    
+    //still nil?
+    // just grab from path
+    if(nil == name)
+    {
+        //from path
+        name = [self.path lastPathComponent];
+    }
+    
+    return name;
 }
 
 //extract/format args
@@ -229,30 +286,54 @@ bail:
     //parent pid
     pid_t parentPID = -1;
     
+    //for parent
+    // first try rPID
+    if(NULL != getRPID)
+    {
+        //get rpid
+        parentPID = getRPID(pid);
+    }
+    
+    //couldn't find/get rPID?
+    // default back to using ppid
+    if( (parentPID <= 0) ||
+        (self.pid == parentPID) )
+    {
+        //use ppid
+        parentPID = self.ppid;
+    }
+    
+    //add self
+    [self.ancestors addObject:[NSNumber numberWithInt:self.pid]];
+    
     //add parent
-    if(-1 != self.ppid)
-    {
-        //add
-        [self.ancestors addObject:[NSNumber numberWithInt:self.ppid]];
+    [self.ancestors addObject:[NSNumber numberWithInt:parentPID]];
         
-        //set current to parent
-        currentPID = self.ppid;
-    }
-    //don't know parent
-    // just start with self
-    else
-    {
-        //start w/ self
-        currentPID = self.pid;
-    }
+    //set current to parent
+    currentPID = parentPID;
     
     //complete ancestry
     while(YES)
     {
-        //get parent pid
-        parentPID = getParentID(currentPID);
-        if( (0 == parentPID) ||
-            (-1 == parentPID) ||
+        //for parent
+        // first try via rPID
+        if(NULL != getRPID)
+        {
+            //get rpid
+            parentPID = getRPID(currentPID);
+        }
+        
+        //couldn't find/get rPID?
+        // default back to using standard method
+        if( (parentPID <= 0) ||
+            (currentPID == parentPID) )
+        {
+            //get parent pid
+            parentPID = getParentID(currentPID);
+        }
+        
+        //done?
+        if( (parentPID <= 0) ||
             (currentPID == parentPID) )
         {
             //bail
@@ -318,7 +399,7 @@ bail:
     [description appendString:@"\"process\":{"];
        
     //add pid, path, etc
-    [description appendFormat: @"\"pid\":%d,\"path\":\"%@\",\"uid\":%d,",self.pid, self.path, self.uid];
+    [description appendFormat: @"\"pid\":%d,\"name\":\"%@\",\"path\":\"%@\",\"uid\":%d,",self.pid, self.name, self.path, self.uid];
    
     //arguments
     if(0 != self.arguments.count)
