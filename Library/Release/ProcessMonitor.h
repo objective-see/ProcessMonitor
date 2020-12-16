@@ -55,14 +55,14 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 
 /* PROPERTIES */
 
-//audit token
-@property audit_token_t auditToken;
-
 //pid
 @property pid_t pid;
 
 //ppid
 @property pid_t ppid;
+
+//rpid
+@property pid_t rpid;
 
 //user id
 @property uid_t uid;
@@ -76,6 +76,9 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 
 //exit code
 @property int exit;
+
+//audit token
+@property(nonatomic, retain)NSData* _Nullable auditToken;
 
 //name
 @property(nonatomic, retain)NSString* _Nullable name;

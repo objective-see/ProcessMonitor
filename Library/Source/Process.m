@@ -132,13 +132,16 @@ pid_t getParentID(pid_t child);
         }
         
         //init audit token
-        self.auditToken = process->audit_token;
+        self.auditToken = [NSData dataWithBytes:&process->audit_token length:sizeof(audit_token_t)];
         
         //init pid
         self.pid = audit_token_to_pid(process->audit_token);
         
         //init ppid
         self.ppid = process->ppid;
+        
+        //init rpid
+        if(message->version >= 4) self.rpid = audit_token_to_pid(process->responsible_audit_token);
         
         //init uuid
         self.uid = audit_token_to_euid(process->audit_token);
@@ -341,7 +344,6 @@ bail:
     return architecture;
 }
 
-
 //extract/format args
 -(void)extractArgs:(es_events_t *)event
 {
@@ -383,6 +385,7 @@ bail:
 }
 
 //generate list of ancestors
+// note: if possible, built off responsible pid (vs. parent)
 -(void)enumerateAncestors
 {
     //current process id
@@ -390,10 +393,16 @@ bail:
     
     //parent pid
     pid_t parentPID = -1;
-    
-    //for parent
-    // first try rPID
-    if(NULL != getRPID)
+
+    //have rpid (from ESF)
+    // init parent w/ that
+    if(0 != self.rpid)
+    {
+        parentPID = self.rpid;
+    }
+    //no rpid
+    // try lookup via private API
+    else if(NULL != getRPID)
     {
         //get rpid
         parentPID = getRPID(pid);
@@ -557,6 +566,9 @@ bail:
 
     //add ppid
     [description appendFormat: @"\"ppid\":%d,", self.ppid];
+    
+    //add rpdi
+    [description appendFormat: @"\"rpid\":%d,", self.rpid];
 
     //add ancestors
     [description appendFormat:@"\"ancestors\":["];

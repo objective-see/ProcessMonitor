@@ -108,20 +108,14 @@ CFDictionaryRef dynamicCodeCheck(Process* process, SecCSFlags flags, NSMutableDi
     //status
     OSStatus status = !errSecSuccess;
     
-    //audit token
-    audit_token_t auditToken = {0};
-    
     //dynamic code ref
     SecCodeRef dynamicCode = NULL;
     
     //signing details
     CFDictionaryRef signingDetails = NULL;
     
-    //extact audit token
-    auditToken = process.auditToken;
-
     //obtain dynamic code ref from (audit) token
-    status = SecCodeCopyGuestWithAttributes(NULL, (__bridge CFDictionaryRef _Nullable)(@{(__bridge NSString *)kSecGuestAttributeAudit:[NSData dataWithBytes:&auditToken length:sizeof(audit_token_t)]}), kSecCSDefaultFlags, &dynamicCode);
+    status = SecCodeCopyGuestWithAttributes(NULL, (__bridge CFDictionaryRef _Nullable)(@{(__bridge NSString *)kSecGuestAttributeAudit:process.auditToken}), kSecCSDefaultFlags, &dynamicCode);
     if(errSecSuccess != status)
     {
         //set error
