@@ -65,15 +65,6 @@ NSMutableDictionary* generateSigningInfo(Process* process, NSUInteger options, S
         goto bail;
     }
     
-    /*
-    //extract code signing flags
-    if(nil != [(__bridge NSDictionary*)signingDetails objectForKey:(__bridge NSString*)kSecCodeInfoFlags])
-    {
-        //extract/save
-        signingInfo[KEY_SIGNATURE_FLAGS] = [(__bridge NSDictionary*)signingDetails objectForKey:(__bridge NSString*)kSecCodeInfoFlags];
-    }
-    */
-    
     //extract code signing id
     if(nil != [(__bridge NSDictionary*)signingDetails objectForKey:(__bridge NSString*)kSecCodeInfoIdentifier])
     {
@@ -111,11 +102,14 @@ bail:
     return signingInfo;
 }
 
-//extract signing info/check via dynamic code ref (process pid)
+//extract signing info/check via dynamic code ref (process auth token)
 CFDictionaryRef dynamicCodeCheck(Process* process, SecCSFlags flags, NSMutableDictionary* signingInfo)
 {
     //status
     OSStatus status = !errSecSuccess;
+    
+    //audit token
+    audit_token_t auditToken = {0};
     
     //dynamic code ref
     SecCodeRef dynamicCode = NULL;
@@ -123,18 +117,20 @@ CFDictionaryRef dynamicCodeCheck(Process* process, SecCSFlags flags, NSMutableDi
     //signing details
     CFDictionaryRef signingDetails = NULL;
     
-    //attempt to generate dynamic code ref via pid
-    // if this fails, perform static code checks via path
-    status = SecCodeCopyGuestWithAttributes(NULL, (__bridge CFDictionaryRef _Nullable)(@{(__bridge NSString *)kSecGuestAttributePid : [NSNumber numberWithInt:process.pid]}), kSecCSDefaultFlags, &dynamicCode);
+    //extact audit token
+    auditToken = process.auditToken;
+
+    //obtain dynamic code ref from (audit) token
+    status = SecCodeCopyGuestWithAttributes(NULL, (__bridge CFDictionaryRef _Nullable)(@{(__bridge NSString *)kSecGuestAttributeAudit:[NSData dataWithBytes:&auditToken length:sizeof(audit_token_t)]}), kSecCSDefaultFlags, &dynamicCode);
     if(errSecSuccess != status)
     {
         //set error
         signingInfo[KEY_SIGNATURE_STATUS] = [NSNumber numberWithInt:status];
-        
+    
         //bail
         goto bail;
     }
-
+    
     //validate code
     status = SecCodeCheckValidity(dynamicCode, flags, NULL);
     if(errSecSuccess != status)

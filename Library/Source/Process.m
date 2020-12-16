@@ -40,7 +40,9 @@ pid_t getParentID(pid_t child);
 @synthesize ancestors;
 @synthesize arguments;
 @synthesize timestamp;
+@synthesize auditToken;
 @synthesize signingInfo;
+@synthesize architecture;
 
 //init
 // flag controls code signing options
@@ -129,6 +131,9 @@ pid_t getParentID(pid_t child);
                 break;
         }
         
+        //init audit token
+        self.auditToken = process->audit_token;
+        
         //init pid
         self.pid = audit_token_to_pid(process->audit_token);
         
@@ -142,7 +147,10 @@ pid_t getParentID(pid_t child);
         self.path = convertStringToken(&process->executable->path);
         
         //now generate name
-        self.name = [self generateName];
+        self.name = [self getName];
+        
+        //cpu type
+        self.architecture = [self getArchitecture];
     
         //add cs flags
         self.csFlags = [NSNumber numberWithUnsignedInt:process->codesigning_flags];
@@ -194,7 +202,7 @@ pid_t getParentID(pid_t child);
 
 //get process' name
 // either via app bundle, or path
--(NSString*)generateName
+-(NSString*)getName
 {
     //name
     NSString* name = nil;
@@ -236,6 +244,103 @@ bail:
     
     return name;
 }
+
+//get process' architecture
+-(NSUInteger)getArchitecture
+{
+    //architecuture
+    NSUInteger architecture = ArchUnknown;
+    
+    //type
+    cpu_type_t type = -1;
+    
+    //size
+    size_t size = 0;
+    
+    //mib
+    int mib[CTL_MAXNAME] = {0};
+    
+    //length
+    size_t length = CTL_MAXNAME;
+    
+    //proc info
+    struct kinfo_proc procInfo = {0};
+    
+    //get mib for 'proc_cputype'
+    if(noErr != sysctlnametomib("sysctl.proc_cputype", mib, &length))
+    {
+        //bail
+        goto bail;
+    }
+    
+    //add pid
+    mib[length] = self.pid;
+    
+    //inc length
+    length++;
+    
+    //init size
+    size = sizeof(cpu_type_t);
+    
+    //get CPU type
+    if(noErr != sysctl(mib, (u_int)length, &type, &size, 0, 0))
+    {
+        //bail
+        goto bail;
+    }
+    
+    //reversing Activity Monitor
+    // if CPU type is CPU_TYPE_X86_64, Apple sets architecture to 'Intel'
+    if(CPU_TYPE_X86_64 == type)
+    {
+        //intel
+        architecture = ArchIntel;
+        
+        //done
+        goto bail;
+    }
+    
+    //reversing Activity Monitor
+    // if CPU type is CPU_TYPE_ARM64, Apple checks proc's p_flags
+    // if P_TRANSLATED is set, then they set architecture to 'Intel'
+    if(CPU_TYPE_ARM64 == type)
+    {
+        //default to apple
+        architecture = ArchAppleSilicon;
+        
+        //(re)init mib
+        mib[0] = CTL_KERN;
+        mib[1] = KERN_PROC;
+        mib[2] = KERN_PROC_PID;
+        mib[3] = pid;
+        
+        //(re)set length
+        length = 4;
+        
+        //(re)set size
+        size = sizeof(procInfo);
+        
+        //get proc info
+        if(noErr != sysctl(mib, (u_int)length, &procInfo, &size, NULL, 0))
+        {
+            //bail
+            goto bail;
+        }
+        
+        //'P_TRANSLATED' set?
+        // set architecture to 'Intel'
+        if(P_TRANSLATED == (P_TRANSLATED & procInfo.kp_proc.p_flag))
+        {
+            //intel
+            architecture = ArchIntel;
+        }
+    }
+    
+bail:
+    
+    return architecture;
+}
+
 
 //extract/format args
 -(void)extractArgs:(es_events_t *)event
@@ -302,9 +407,6 @@ bail:
         //use ppid
         parentPID = self.ppid;
     }
-    
-    //add self
-    [self.ancestors addObject:[NSNumber numberWithInt:self.pid]];
     
     //add parent
     [self.ancestors addObject:[NSNumber numberWithInt:parentPID]];
@@ -401,6 +503,25 @@ bail:
     //add pid, path, etc
     [description appendFormat: @"\"pid\":%d,\"name\":\"%@\",\"path\":\"%@\",\"uid\":%d,",self.pid, self.name, self.path, self.uid];
    
+    //add cpu type
+    switch(self.architecture)
+    {
+        //intel
+        case ArchIntel:
+            [description appendFormat: @"\"architecture\":\"Intel\","];
+            break;
+        
+        //apple
+        case ArchAppleSilicon:
+            [description appendFormat: @"\"architecture\":\"Apple Silicon\","];
+            break;
+
+        //unknown
+        default:
+            [description appendString:@"\"architecture\":\"unknown\","];
+            break;
+    }
+    
     //arguments
     if(0 != self.arguments.count)
     {

@@ -12,7 +12,6 @@
 /* CONSTS */
 
 //code signing keys
-#define KEY_SIGNATURE_FLAGS @"csFlags"
 #define KEY_SIGNATURE_STATUS @"signatureStatus"
 #define KEY_SIGNATURE_SIGNER @"signatureSigner"
 #define KEY_SIGNATURE_IDENTIFIER @"signatureID"
@@ -24,6 +23,9 @@ enum csOptions{csNone, csStatic, csDynamic};
 
 //signers
 enum Signer{None, Apple, AppStore, DevID, AdHoc};
+
+//architectures
+enum Architectures{ArchUnknown, ArchAppleSilicon, ArchIntel};
 
 //cs options
 #define CS_STATIC_CHECK YES
@@ -53,6 +55,9 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 
 /* PROPERTIES */
 
+//audit token
+@property audit_token_t auditToken;
+
 //pid
 @property pid_t pid;
 
@@ -65,6 +70,9 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 //event
 // exec, fork, exit
 @property u_int32_t event;
+
+//cpu type
+@property NSUInteger architecture;
 
 //exit code
 @property int exit;
