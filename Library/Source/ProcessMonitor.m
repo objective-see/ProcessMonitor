@@ -25,8 +25,8 @@ pid_t (*getRPID)(pid_t pid) = NULL;
 @implementation ProcessMonitor
 
 //start monitoring
-// pass in events of interest, count of said events, flag for codesigning, and callback
--(BOOL)start:(es_event_type_t*)events count:(uint32_t)count csOption:(NSUInteger)csOption callback:(ProcessCallbackBlock)callback
+// pass in events of interest, count of said events, flag for codesigning, flag for environment variable collection, and callback
+-(BOOL)start:(es_event_type_t*)events count:(uint32_t)count csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv callback:(ProcessCallbackBlock)callback
 {
     //flag
     BOOL started = NO;
@@ -47,7 +47,7 @@ pid_t (*getRPID)(pid_t pid) = NULL;
         
         //init process obj
         // do static check as well
-        process = [[Process alloc] init:(es_message_t* _Nonnull)message csOption:csOption];
+        process = [[Process alloc] init:(es_message_t* _Nonnull)message csOption:csOption parseEnv:parseEnv];
         if(nil != process)
         {
             //invoke user callback

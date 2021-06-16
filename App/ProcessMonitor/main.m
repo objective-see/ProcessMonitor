@@ -87,6 +87,9 @@ BOOL processArgs(NSArray* arguments)
     //init 'prettyPrint' flag
     prettyPrint = [arguments containsObject:@"-pretty"];
     
+    //init 'parseEnv' flag
+    parseEnv = [arguments containsObject:@"-parseEnv"];
+    
     //extract value for 'filterBy'
     index = [arguments indexOfObject:@"-filter"];
     if(NSNotFound != index)
@@ -134,6 +137,7 @@ void usage()
     printf(" -h or -help      display this usage info\n");
     printf(" -pretty          JSON output is 'pretty-printed'\n");
     printf(" -skipApple       ignore Apple (platform) processes \n");
+    printf(" -parseEnv        parse environment variable information\n");
     printf(" -filter <name>   show events matching process name\n\n");
     
     return;
@@ -191,7 +195,7 @@ BOOL monitor()
         
     //start monitoring
     // pass in events, count, and callback block for events
-    return [procMon start:events count:sizeof(events)/sizeof(events[0]) csOption:csStatic callback:block];
+    return [procMon start:events count:sizeof(events)/sizeof(events[0]) csOption:csStatic parseEnv:parseEnv callback:block];
 }
 
 //prettify JSON
