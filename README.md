@@ -8,6 +8,7 @@ It captures process `start`, `fork`, and `exit` events, providing:
 * path
 * ancestory
 * arguments
+* environment variables
 * code-signing information
 
 **Read More:** \

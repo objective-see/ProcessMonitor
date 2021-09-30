@@ -22,6 +22,9 @@ NSString* filterBy = nil;
 //'prettyPrint' flag
 BOOL prettyPrint = NO;
 
+//'parseEnv' flag to capture environment variable information
+BOOL parseEnv = NO;
+ 
 /* FUNCTIONS */
 
 //process args

@@ -45,8 +45,8 @@ pid_t getParentID(pid_t child);
 @synthesize architecture;
 
 //init
-// flag controls code signing options
--(id)init:(es_message_t*)message csOption:(NSUInteger)csOption
+// flag controls code signing options and environment variable collection
+-(id)init:(es_message_t*)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv
 {
     //init super
     self = [super init];
@@ -61,6 +61,9 @@ pid_t getParentID(pid_t child);
         
         //alloc array for args
         self.arguments = [NSMutableArray array];
+        
+        //alloc dictionary for environment variables if flag is set
+        self.environment = parseEnv ? [NSMutableDictionary dictionary] : nil;
         
         //alloc array for parents
         self.ancestors = [NSMutableArray array];
@@ -100,6 +103,12 @@ pid_t getParentID(pid_t child);
                 
                 //extract/format args
                 [self extractArgs:&message->event];
+                
+                //extract/format environment variables
+                if(parseEnv)
+                {
+                    [self extractEnvironment:&message->event];
+                }
                 
                 break;
                 
@@ -384,6 +393,36 @@ bail:
     return;
 }
 
+//extract/format environment variables
+-(void)extractEnvironment:(es_events_t *)event
+{
+    NSString* envString = nil;
+    NSString* keyString = nil;
+    NSString* valueString = nil;
+    
+    uint32_t count = es_exec_env_count(&event->exec);
+    for (uint32_t i = 0; i < count; i++)
+    {
+        keyString = nil;
+        valueString = nil;
+        
+        //extract current env
+        es_string_token_t currentEnv = es_exec_env(&event->exec, i);
+        
+        //convert string token to env string
+        envString = convertStringToken(&currentEnv);
+        if(envString != nil)
+        {
+            //convert env string to key and value
+            convertEnvironmentVariableStringToKeyValue(envString, &keyString, &valueString);
+            if(keyString != nil && valueString != nil)
+            {
+                [self.environment setObject:valueString forKey:keyString];
+            }
+        }
+    }
+}
+
 //generate list of ancestors
 // note: if possible, built off responsible pid (vs. parent)
 -(void)enumerateAncestors
@@ -562,6 +601,35 @@ bail:
     {
        //add empty list
        [description appendFormat:@"\"arguments\":[],"];
+    }
+    
+    //environment
+    if(nil != self.environment && 0 != self.environment.count)
+    {
+       //start list
+       [description appendFormat:@"\"environment\":{"];
+       
+       //add all environment variables
+       [self.environment enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL * _Nonnull stop) {
+           //add key and encode double quotes
+           [description appendFormat:@"\"%@\":", [key stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""]];
+           //add value
+           [description appendFormat:@"\"%@\",", [value stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""]];
+       }];
+       //remove last ','
+       if(YES == [description hasSuffix:@","])
+       {
+           //remove
+           [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+       }
+       //terminate object
+       [description appendString:@"},"];
+    }
+    //parseEnv specified but empty environment
+    else if (nil != self.environment)
+    {
+       //add empty object
+       [description appendFormat:@"\"environment\":{},"];
     }
 
     //add ppid

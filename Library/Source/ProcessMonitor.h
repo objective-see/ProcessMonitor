@@ -41,8 +41,8 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 @interface ProcessMonitor : NSObject
 
 //start monitoring
-// pass in events of interest, count of said events, flag for codesigning, and callback
--(BOOL)start:(es_event_type_t* _Nonnull)events count:(uint32_t)count csOption:(NSUInteger)csOption callback:(ProcessCallbackBlock _Nonnull)callback;
+// pass in events of interest, count of said events, flag for codesigning, flag for environment variable collection, and callback
+-(BOOL)start:(es_event_type_t* _Nonnull)events count:(uint32_t)count csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv callback:(ProcessCallbackBlock _Nonnull)callback;
 
 //stop monitoring
 -(BOOL)stop;
@@ -89,6 +89,9 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 //args
 @property(nonatomic, retain)NSMutableArray* _Nonnull arguments;
 
+//environment variables
+@property(nonatomic, retain)NSMutableDictionary* _Nonnull environment;
+
 //ancestors
 @property(nonatomic, retain)NSMutableArray* _Nonnull ancestors;
 
@@ -118,6 +121,6 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 
 //init
 // flag controls code signing options
--(id _Nullable)init:(es_message_t* _Nonnull)message csOption:(NSUInteger)csOption;
+-(id _Nullable)init:(es_message_t* _Nonnull)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv;
 
 @end
