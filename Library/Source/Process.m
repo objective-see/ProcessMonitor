@@ -820,6 +820,17 @@ bail:
     return description;
 }
 
+-(NSString *)compactDescription {
+    if (self.arguments.count < 1) {
+        return self.path;
+    }
+
+    NSArray<NSString*>* arguments = @[self.path];
+    arguments = [arguments arrayByAddingObjectsFromArray:
+                 [self.arguments subarrayWithRange:NSMakeRange(1, self.arguments.count - 1)]];
+    return [arguments componentsJoinedByString:@" "];
+}
+
 @end
 
 //helper function
