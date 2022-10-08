@@ -13,7 +13,7 @@
 
 /* GLOBALS */
 
-//'skipAPple' flag
+//'skipApple' flag
 BOOL skipApple = NO;
 
 //filter string
@@ -21,6 +21,9 @@ NSString* filterBy = nil;
 
 //'prettyPrint' flag
 BOOL prettyPrint = NO;
+
+//'compact' flag
+BOOL compact = NO;
 
 //'parseEnv' flag to capture environment variable information
 BOOL parseEnv = NO;

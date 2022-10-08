@@ -120,4 +120,6 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 // flag controls code signing options
 -(id _Nullable)init:(es_message_t* _Nonnull)message csOption:(NSUInteger)csOption;
 
+-(NSString* _Nonnull)compactDescription;
+
 @end

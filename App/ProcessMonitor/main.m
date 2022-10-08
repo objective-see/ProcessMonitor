@@ -86,6 +86,9 @@ BOOL processArgs(NSArray* arguments)
     
     //init 'prettyPrint' flag
     prettyPrint = [arguments containsObject:@"-pretty"];
+
+    //init 'compact' flag
+    compact = [arguments containsObject:@"-compact"];
     
     //init 'parseEnv' flag
     parseEnv = [arguments containsObject:@"-parseEnv"];
@@ -136,6 +139,7 @@ void usage()
     printf("\n%s (v%s) usage:\n", name.UTF8String, version.UTF8String);
     printf(" -h or -help      display this usage info\n");
     printf(" -pretty          JSON output is 'pretty-printed'\n");
+    printf(" -compact         output is printed on a single line imitating a command line invocation\n");
     printf(" -skipApple       ignore Apple (platform) processes \n");
     printf(" -parseEnv        parse environment variable information\n");
     printf(" -filter <name>   show events matching process name\n\n");
@@ -179,12 +183,16 @@ BOOL monitor()
                 return;
             }
         }
-    
+
         //pretty print?
         if(YES == prettyPrint)
         {
             //make me pretty!
             printf("%s\n", prettifyJSON(process.description).UTF8String);
+        }
+        else if(YES == compact)
+        {
+            printf("%s\n", process.compactDescription.UTF8String);
         }
         else
         {
