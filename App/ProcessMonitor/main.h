@@ -24,6 +24,15 @@ BOOL prettyPrint = NO;
 
 //'parseEnv' flag to capture environment variable information
 BOOL parseEnv = NO;
+
+//'hideForks' flag
+BOOL hideForks = NO;
+
+//'hideExecs' flag
+BOOL hideExecs = NO;
+
+//'hideExits' flag
+BOOL hideExits = NO;
  
 /* FUNCTIONS */
 
