@@ -89,6 +89,15 @@ BOOL processArgs(NSArray* arguments)
     
     //init 'parseEnv' flag
     parseEnv = [arguments containsObject:@"-parseEnv"];
+
+    //init 'hideForks' flag
+    hideForks = [arguments containsObject:@"-hideForks"];
+
+    //init 'hideExecs' flag
+    hideExecs = [arguments containsObject:@"-hideExecs"];
+
+    //init 'hideExits' flag
+    hideExits = [arguments containsObject:@"-hideExits"];
     
     //extract value for 'filterBy'
     index = [arguments indexOfObject:@"-filter"];
@@ -138,8 +147,11 @@ void usage()
     printf(" -pretty          JSON output is 'pretty-printed'\n");
     printf(" -skipApple       ignore Apple (platform) processes \n");
     printf(" -parseEnv        parse environment variable information\n");
-    printf(" -filter <name>   show events matching process name\n\n");
-    
+    printf(" -filter <name>   show events matching process name\n");
+    printf(" -hideForks       don't show process fork events\n");
+    printf(" -hideExecs       don't show process exec events\n");
+    printf(" -hideExits       don't show process exit events\n\n");
+
     return;
 }
 
@@ -166,6 +178,23 @@ BOOL monitor()
         {
             //ignore
             return;
+        }
+
+        switch (process.event) {
+            case ES_EVENT_TYPE_NOTIFY_FORK:
+                if(hideForks)
+                    return;
+                break;
+            case ES_EVENT_TYPE_NOTIFY_EXEC:
+                if(hideExecs)
+                    return;
+                break;
+            case ES_EVENT_TYPE_NOTIFY_EXIT:
+                if (hideExits)
+                    return;
+                break;
+            default:
+                break;
         }
         
         //filter
