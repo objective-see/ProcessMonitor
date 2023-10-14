@@ -45,7 +45,7 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 -(BOOL)start:(es_event_type_t* _Nonnull)events count:(uint32_t)count csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv callback:(ProcessCallbackBlock _Nonnull)callback;
 
 //stop monitoring
--(BOOL)stop;
+@property (NS_NONATOMIC_IOSONLY, readonly) BOOL stop;
 
 @end
 
@@ -90,7 +90,7 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 @property(nonatomic, retain)NSMutableArray* _Nonnull arguments;
 
 //environment variables
-@property(nonatomic, retain)NSMutableDictionary* _Nonnull environment;
+@property(nonatomic, retain)NSMutableDictionary* _Nullable environment;
 
 //ancestors
 @property(nonatomic, retain)NSMutableArray* _Nonnull ancestors;
@@ -121,6 +121,6 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 
 //init
 // flag controls code signing options
--(id _Nullable)init:(es_message_t* _Nonnull)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv;
+-(instancetype)init:(es_message_t* _Nonnull)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv NS_DESIGNATED_INITIALIZER;
 
 @end

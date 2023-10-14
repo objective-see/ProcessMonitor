@@ -20,7 +20,7 @@ int main(int argc, const char * argv[]) {
         NSArray* arguments = nil;
         
         //grab args
-        arguments = [[NSProcessInfo processInfo] arguments];
+        arguments = [NSProcessInfo processInfo].arguments;
         
         //run via user (app)?
         // display error popup
@@ -109,7 +109,7 @@ BOOL processArgs(NSArray* arguments)
         }
         
         //grab filter name
-        filterBy = [arguments objectAtIndex:index];
+        filterBy = arguments[index];
     }
 
 bail:
@@ -118,7 +118,7 @@ bail:
 }
 
 //print usage
-void usage()
+void usage(void)
 {
     //name
     NSString* name = nil;
@@ -127,24 +127,24 @@ void usage()
     NSString* version = nil;
     
     //extract name
-    name = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleName"];
+    name = [NSBundle mainBundle].infoDictionary[@"CFBundleName"];
     
     //extract version
-    version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
+    version = [NSBundle mainBundle].infoDictionary[@"CFBundleVersion"];
 
     //usage
     printf("\n%s (v%s) usage:\n", name.UTF8String, version.UTF8String);
-    printf(" -h or -help      display this usage info\n");
-    printf(" -pretty          JSON output is 'pretty-printed'\n");
-    printf(" -skipApple       ignore Apple (platform) processes \n");
-    printf(" -parseEnv        parse environment variable information\n");
-    printf(" -filter <name>   show events matching process name\n\n");
+    printf(" -h or -help            display this usage info\n");
+    printf(" -pretty                JSON output is 'pretty-printed'\n");
+    printf(" -skipApple             ignore Apple (platform) processes \n");
+    printf(" -parseEnv              parse environment variable information\n");
+    printf(" -filter <name regex>   show events matching process name\n\n");
     
     return;
 }
 
 //monitor
-BOOL monitor()
+BOOL monitor(void)
 {
     //(process) events of interest
     es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK, ES_EVENT_TYPE_NOTIFY_EXIT};
