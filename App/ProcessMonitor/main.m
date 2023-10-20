@@ -63,7 +63,7 @@ int main(int argc, const char * argv[]) {
     
         //run loop
         // as don't want to exit
-        [[NSRunLoop currentRunLoop] run];
+        [NSRunLoop.currentRunLoop run];
         
     } //pool
     
@@ -98,7 +98,7 @@ BOOL processArgs(NSArray* arguments)
         index++;
         
         //sanity check
-        // make sure name comes after
+        // make sure name regex comes after
         if(index >= arguments.count)
         {
             //invalid
@@ -108,8 +108,17 @@ BOOL processArgs(NSArray* arguments)
             goto bail;
         }
         
-        //grab filter name
-        filterBy = arguments[index];
+        //grab filter name regex
+        NSError *regex_error = nil;
+        filterByRegex = [NSRegularExpression regularExpressionWithPattern:arguments[index] options:0 error:&regex_error];
+        if (!filterByRegex || regex_error) {
+            printf("%s", [NSString stringWithFormat:@"Error creating regex: %@\n", regex_error.localizedDescription].UTF8String);
+            //invalid
+            validArgs = NO;
+            
+            //bail
+            goto bail;
+        }
     }
 
 bail:
@@ -121,16 +130,10 @@ bail:
 void usage(void)
 {
     //name
-    NSString* name = nil;
+    NSString* name = NSBundle.mainBundle.infoDictionary[@"CFBundleName"];
     
     //version
-    NSString* version = nil;
-    
-    //extract name
-    name = [NSBundle mainBundle].infoDictionary[@"CFBundleName"];
-    
-    //extract version
-    version = [NSBundle mainBundle].infoDictionary[@"CFBundleVersion"];
+    NSString* version = NSBundle.mainBundle.infoDictionary[@"CFBundleVersion"];
 
     //usage
     printf("\n%s (v%s) usage:\n", name.UTF8String, version.UTF8String);
@@ -150,7 +153,7 @@ BOOL monitor(void)
     es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK, ES_EVENT_TYPE_NOTIFY_EXIT};
     
     //init monitor
-    ProcessMonitor* procMon = [[ProcessMonitor alloc] init];
+    ProcessMonitor* procMon = ProcessMonitor.new;
     
     //define block
     // automatically invoked upon process events
@@ -170,10 +173,10 @@ BOOL monitor(void)
         
         //filter
         // and no match? skip
-        if(0 != filterBy.length)
+        if(nil != filterByRegex)
         {
             //check file paths & process
-            if(YES != [process.path hasSuffix:filterBy])
+            if(0 == [filterByRegex numberOfMatchesInString:process.path options:0 range:NSMakeRange(0, process.path.length)])
             {
                 //ignore
                 return;
@@ -248,7 +251,7 @@ NSString* prettifyJSON(NSString* output)
     
     //convert to string
     // note, we manually unescape forward slashes
-    prettyString = [[[NSString alloc] initWithData:prettyData encoding:NSUTF8StringEncoding] stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"];
+    prettyString = [[NSString.alloc initWithData:prettyData encoding:NSUTF8StringEncoding] stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"];
    
 bail:
     

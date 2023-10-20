@@ -121,6 +121,6 @@ typedef void (^ProcessCallbackBlock)(Process* _Nonnull);
 
 //init
 // flag controls code signing options
--(instancetype)init:(es_message_t* _Nonnull)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv NS_DESIGNATED_INITIALIZER;
+-(instancetype _Nullable)init:(es_message_t* _Nonnull)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv;
 
 @end

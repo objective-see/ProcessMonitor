@@ -46,10 +46,10 @@ pid_t getParentID(pid_t child);
 
 //init
 // flag controls code signing options and environment variable collection
--(instancetype)init:(es_message_t*)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv
+-(instancetype _Nullable)init:(es_message_t*)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv
 {
     //init super
-    self = [super init];
+    self = super.init;
     if(nil != self)
     {
         //process from msg
