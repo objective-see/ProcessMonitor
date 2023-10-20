@@ -46,10 +46,10 @@ pid_t getParentID(pid_t child);
 
 //init
 // flag controls code signing options and environment variable collection
--(id)init:(es_message_t*)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv
+-(instancetype _Nullable)init:(es_message_t*)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv
 {
     //init super
-    self = [super init];
+    self = super.init;
     if(nil != self)
     {
         //process from msg
@@ -165,7 +165,7 @@ pid_t getParentID(pid_t child);
         self.architecture = [self getArchitecture];
     
         //add cs flags
-        self.csFlags = [NSNumber numberWithUnsignedInt:process->codesigning_flags];
+        self.csFlags = @(process->codesigning_flags);
         
         //convert/add signing id
         if(nil != (string = convertStringToken(&process->signing_id)))
@@ -182,7 +182,7 @@ pid_t getParentID(pid_t child);
         }
         
         //add platform binary
-        self.isPlatformBinary = [NSNumber numberWithBool:process->is_platform_binary];
+        self.isPlatformBinary = @(process->is_platform_binary);
         
         //save cd hash
         self.cdHash = [NSData dataWithBytes:(const void *)process->cdhash length:sizeof(uint8_t)*CS_CDHASH_LEN];
@@ -227,7 +227,7 @@ pid_t getParentID(pid_t child);
     
     //convert path to app path
     // generally, <blah.app>/Contents/MacOS/blah
-    appPath = [[[self.path stringByDeletingLastPathComponent] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+    appPath = (self.path).stringByDeletingLastPathComponent.stringByDeletingLastPathComponent.stringByDeletingLastPathComponent;
     if(YES != [appPath hasSuffix:@".app"])
     {
         //bail
@@ -241,7 +241,7 @@ pid_t getParentID(pid_t child);
         (YES == [appBundle.executablePath isEqualToString:self.path]) )
     {
         //grab name from app's bundle
-        name = [appBundle infoDictionary][@"CFBundleDisplayName"];
+        name = appBundle.infoDictionary[@"CFBundleDisplayName"];
     }
     
 bail:
@@ -251,7 +251,7 @@ bail:
     if(nil == name)
     {
         //from path
-        name = [self.path lastPathComponent];
+        name = (self.path).lastPathComponent;
     }
     
     return name;
@@ -417,7 +417,7 @@ bail:
             convertEnvironmentVariableStringToKeyValue(envString, &keyString, &valueString);
             if(keyString != nil && valueString != nil)
             {
-                [self.environment setObject:valueString forKey:keyString];
+                (self.environment)[keyString] = valueString;
             }
         }
     }
@@ -457,7 +457,7 @@ bail:
     }
     
     //add parent
-    [self.ancestors addObject:[NSNumber numberWithInt:parentPID]];
+    [self.ancestors addObject:@(parentPID)];
         
     //set current to parent
     currentPID = parentPID;
@@ -494,7 +494,7 @@ bail:
         currentPID = parentPID;
         
         //add
-        [self.ancestors addObject:[NSNumber numberWithInt:parentPID]];
+        [self.ancestors addObject:@(parentPID)];
     }
     
     return;
@@ -590,7 +590,7 @@ bail:
        if(YES == [description hasSuffix:@","])
        {
            //remove
-           [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+           [description deleteCharactersInRange:NSMakeRange(description.length-1, 1)];
        }
        
        //terminate list
@@ -620,7 +620,7 @@ bail:
        if(YES == [description hasSuffix:@","])
        {
            //remove
-           [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+           [description deleteCharactersInRange:NSMakeRange(description.length-1, 1)];
        }
        //terminate object
        [description appendString:@"},"];
@@ -652,7 +652,7 @@ bail:
     if(YES == [description hasSuffix:@","])
     {
        //remove
-       [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+       [description deleteCharactersInRange:NSMakeRange(description.length-1, 1)];
     }
 
     //terminate list
@@ -797,7 +797,7 @@ bail:
     if(YES == [description hasSuffix:@","])
     {
       //remove
-      [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+      [description deleteCharactersInRange:NSMakeRange(description.length-1, 1)];
     }
 
     //terminate dictionary
