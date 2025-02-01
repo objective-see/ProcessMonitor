@@ -46,147 +46,147 @@ pid_t getParentID(pid_t child);
 
 //init
 // flag controls code signing options and environment variable collection
--(id)init:(es_message_t*)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv
+-(instancetype _Nullable)init:(es_message_t*)message csOption:(NSUInteger)csOption parseEnv:(BOOL)parseEnv
 {
     //init super
-    self = [super init];
+    self = super.init;
     if(nil != self)
     {
         //process from msg
         es_process_t* process = NULL;
-        
+
         //string value
         // used for various conversions
         NSString* string = nil;
-        
+
         //alloc array for args
         self.arguments = [NSMutableArray array];
-        
+
         //alloc dictionary for environment variables if flag is set
         self.environment = parseEnv ? [NSMutableDictionary dictionary] : nil;
-        
+
         //alloc array for parents
         self.ancestors = [NSMutableArray array];
-        
+
         //alloc dictionary for signing info
         self.signingInfo = [NSMutableDictionary dictionary];
-        
+
         //get function pointer
         getRPID = dlsym(RTLD_NEXT, "responsibility_get_pid_responsible_for_pid");
-        
+
         //init exit
         self.exit = -1;
-        
+
         //init user id
         self.uid = -1;
-        
+
         //init event
         self.event = -1;
-        
+
         //set start time
         self.timestamp = [NSDate date];
-        
+
         //set type
         self.event = message->event_type;
-        
+
         //event specific logic
-        
+
         // set type
         // extract (relevant) process object, etc
         switch (message->event_type) {
-            
+
             //exec
             case ES_EVENT_TYPE_NOTIFY_EXEC:
-                
+
                 //set process (target)
                 process = message->event.exec.target;
-                
+
                 //extract/format args
                 [self extractArgs:&message->event];
-                
+
                 //extract/format environment variables
                 if(parseEnv)
                 {
                     [self extractEnvironment:&message->event];
                 }
-                
+
                 break;
-                
+
             //fork
             case ES_EVENT_TYPE_NOTIFY_FORK:
-                
+
                 //set process (child)
                 process = message->event.fork.child;
-                
+
                 break;
-                
+
             //exit
             case ES_EVENT_TYPE_NOTIFY_EXIT:
-                
+
                 //set process
                 process = message->process;
-                
+
                 //set exit code
                 self.exit = message->event.exit.stat;
-                
+
                 break;
-            
+
             //default
             default:
-                
+
                 //set process
                 process = message->process;
-                
+
                 break;
         }
-        
+
         //init audit token
         self.auditToken = [NSData dataWithBytes:&process->audit_token length:sizeof(audit_token_t)];
-        
+
         //init pid
         self.pid = audit_token_to_pid(process->audit_token);
-        
+
         //init ppid
         self.ppid = process->ppid;
-        
+
         //init rpid
         if(message->version >= 4) self.rpid = audit_token_to_pid(process->responsible_audit_token);
-        
+
         //init uuid
         self.uid = audit_token_to_euid(process->audit_token);
-        
+
         //init path
         self.path = convertStringToken(&process->executable->path);
-        
+
         //now generate name
         self.name = [self getName];
-        
+
         //cpu type
         self.architecture = [self getArchitecture];
-    
+
         //add cs flags
-        self.csFlags = [NSNumber numberWithUnsignedInt:process->codesigning_flags];
-        
+        self.csFlags = @(process->codesigning_flags);
+
         //convert/add signing id
         if(nil != (string = convertStringToken(&process->signing_id)))
         {
             //add
             self.signingID = string;
         }
-        
+
         //convert/add team id
         if(nil != (string = convertStringToken(&process->team_id)))
         {
             //add
             self.teamID = string;
         }
-        
+
         //add platform binary
-        self.isPlatformBinary = [NSNumber numberWithBool:process->is_platform_binary];
-        
+        self.isPlatformBinary = @(process->is_platform_binary);
+
         //save cd hash
         self.cdHash = [NSData dataWithBytes:(const void *)process->cdhash length:sizeof(uint8_t)*CS_CDHASH_LEN];
-               
+
         //when specified
         // generate full code signing info
         if(csNone != csOption)
@@ -194,11 +194,11 @@ pid_t getParentID(pid_t child);
             //generate code signing info
             [self generateCSInfo:csOption];
         }
-    
+
         //enum ancestors
         [self enumerateAncestors];
     }
-    
+
     return self;
 }
 
@@ -208,7 +208,7 @@ pid_t getParentID(pid_t child);
 {
     //generate via helper function
     self.signingInfo = generateSigningInfo(self, csOption, kSecCSDefaultFlags);
-    
+
     return;
 }
 
@@ -218,22 +218,22 @@ pid_t getParentID(pid_t child);
 {
     //name
     NSString* name = nil;
-    
+
     //app path
     NSString* appPath = nil;
-    
+
     //app bundle
     NSBundle* appBundle = nil;
-    
+
     //convert path to app path
     // generally, <blah.app>/Contents/MacOS/blah
-    appPath = [[[self.path stringByDeletingLastPathComponent] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
+    appPath = (self.path).stringByDeletingLastPathComponent.stringByDeletingLastPathComponent.stringByDeletingLastPathComponent;
     if(YES != [appPath hasSuffix:@".app"])
     {
         //bail
         goto bail;
     }
-    
+
     //try load bundle
     // and verify it's the 'right' bundle
     appBundle = [NSBundle bundleWithPath:appPath];
@@ -241,77 +241,79 @@ pid_t getParentID(pid_t child);
         (YES == [appBundle.executablePath isEqualToString:self.path]) )
     {
         //grab name from app's bundle
-        name = [appBundle infoDictionary][@"CFBundleDisplayName"];
+        name = appBundle.infoDictionary[@"CFBundleDisplayName"];
     }
-    
+
 bail:
-    
+
     //still nil?
     // just grab from path
     if(nil == name)
     {
         //from path
-        name = [self.path lastPathComponent];
+        name = (self.path).lastPathComponent;
     }
-    
+
     return name;
 }
 
 //get process' architecture
 -(NSUInteger)getArchitecture
 {
-    //architecuture
+    //architecture
     NSUInteger architecture = ArchUnknown;
-    
+
     //type
-    cpu_type_t type = -1;
-    
+    cpu_type_t type = (cpu_type_t)0x0BADC0DE;
+
     //size
     size_t size = 0;
-    
+
     //mib
     int mib[CTL_MAXNAME] = {0};
-    
+
     //length
     size_t length = CTL_MAXNAME;
-    
+
     //proc info
     struct kinfo_proc procInfo = {0};
-    
+
     //get mib for 'proc_cputype'
     if(noErr != sysctlnametomib("sysctl.proc_cputype", mib, &length))
     {
+        architecture = ArchFail1;
         //bail
         goto bail;
     }
-    
+
     //add pid
     mib[length] = self.pid;
-    
+
     //inc length
     length++;
-    
+
     //init size
     size = sizeof(cpu_type_t);
-    
+
     //get CPU type
     if(noErr != sysctl(mib, (u_int)length, &type, &size, 0, 0))
     {
+        architecture = ArchFail2;
         //bail
         goto bail;
     }
-    
+
     //reversing Activity Monitor
     // if CPU type is CPU_TYPE_X86_64, Apple sets architecture to 'Intel'
     if(CPU_TYPE_X86_64 == type)
     {
         //intel
         architecture = ArchIntel;
-        
+
         //done
         goto bail;
     }
-    
+
     //reversing Activity Monitor
     // if CPU type is CPU_TYPE_ARM64, Apple checks proc's p_flags
     // if P_TRANSLATED is set, then they set architecture to 'Intel'
@@ -319,26 +321,27 @@ bail:
     {
         //default to apple
         architecture = ArchAppleSilicon;
-        
+
         //(re)init mib
         mib[0] = CTL_KERN;
         mib[1] = KERN_PROC;
         mib[2] = KERN_PROC_PID;
         mib[3] = pid;
-        
+
         //(re)set length
         length = 4;
-        
+
         //(re)set size
         size = sizeof(procInfo);
-        
+
         //get proc info
         if(noErr != sysctl(mib, (u_int)length, &procInfo, &size, NULL, 0))
         {
+            architecture = ArchFail3;
             //bail
             goto bail;
         }
-        
+
         //'P_TRANSLATED' set?
         // set architecture to 'Intel'
         if(P_TRANSLATED == (P_TRANSLATED & procInfo.kp_proc.p_flag))
@@ -347,9 +350,9 @@ bail:
             architecture = ArchIntel;
         }
     }
-    
+
 bail:
-    
+
     return architecture;
 }
 
@@ -358,10 +361,10 @@ bail:
 {
     //number of args
     uint32_t count = 0;
-    
+
     //argument
     NSString* argument = nil;
-    
+
     //get # of args
     count = es_exec_arg_count(&event->exec);
     if(0 == count)
@@ -369,16 +372,16 @@ bail:
         //bail
         goto bail;
     }
-    
+
     //extract all args
     for(uint32_t i = 0; i < count; i++)
     {
         //current arg
         es_string_token_t currentArg = {0};
-        
+
         //extract current arg
         currentArg = es_exec_arg(&event->exec, i);
-        
+
         //convert argument
         argument = convertStringToken(&currentArg);
         if(nil != argument)
@@ -387,9 +390,9 @@ bail:
             [self.arguments addObject:argument];
         }
     }
-    
+
 bail:
-    
+
     return;
 }
 
@@ -399,16 +402,16 @@ bail:
     NSString* envString = nil;
     NSString* keyString = nil;
     NSString* valueString = nil;
-    
+
     uint32_t count = es_exec_env_count(&event->exec);
     for (uint32_t i = 0; i < count; i++)
     {
         keyString = nil;
         valueString = nil;
-        
+
         //extract current env
         es_string_token_t currentEnv = es_exec_env(&event->exec, i);
-        
+
         //convert string token to env string
         envString = convertStringToken(&currentEnv);
         if(envString != nil)
@@ -417,7 +420,7 @@ bail:
             convertEnvironmentVariableStringToKeyValue(envString, &keyString, &valueString);
             if(keyString != nil && valueString != nil)
             {
-                [self.environment setObject:valueString forKey:keyString];
+                (self.environment)[keyString] = valueString;
             }
         }
     }
@@ -429,7 +432,7 @@ bail:
 {
     //current process id
     pid_t currentPID = -1;
-    
+
     //parent pid
     pid_t parentPID = -1;
 
@@ -446,7 +449,7 @@ bail:
         //get rpid
         parentPID = getRPID(pid);
     }
-    
+
     //couldn't find/get rPID?
     // default back to using ppid
     if( (parentPID <= 0) ||
@@ -455,13 +458,13 @@ bail:
         //use ppid
         parentPID = self.ppid;
     }
-    
+
     //add parent
-    [self.ancestors addObject:[NSNumber numberWithInt:parentPID]];
-        
+    [self.ancestors addObject:@(parentPID)];
+
     //set current to parent
     currentPID = parentPID;
-    
+
     //complete ancestry
     while(YES)
     {
@@ -472,7 +475,7 @@ bail:
             //get rpid
             parentPID = getRPID(currentPID);
         }
-        
+
         //couldn't find/get rPID?
         // default back to using standard method
         if( (parentPID <= 0) ||
@@ -481,7 +484,7 @@ bail:
             //get parent pid
             parentPID = getParentID(currentPID);
         }
-        
+
         //done?
         if( (parentPID <= 0) ||
             (currentPID == parentPID) )
@@ -489,14 +492,14 @@ bail:
             //bail
             break;
         }
-        
+
         //update
         currentPID = parentPID;
-        
+
         //add
-        [self.ancestors addObject:[NSNumber numberWithInt:parentPID]];
+        [self.ancestors addObject:@(parentPID)];
     }
-    
+
     return;
 }
 
@@ -506,7 +509,7 @@ bail:
 {
     //description
     NSMutableString* description = nil;
-    
+
     //cd hash
     // requires formatting
     NSMutableString* cdHash = nil;
@@ -527,17 +530,17 @@ bail:
         case ES_EVENT_TYPE_NOTIFY_EXEC:
             [description appendString:@"\"ES_EVENT_TYPE_NOTIFY_EXEC\","];
             break;
-            
+
         //fork
         case ES_EVENT_TYPE_NOTIFY_FORK:
             [description appendString:@"\"ES_EVENT_TYPE_NOTIFY_FORK\","];
             break;
-            
+
         //exit
         case ES_EVENT_TYPE_NOTIFY_EXIT:
             [description appendString:@"\"ES_EVENT_TYPE_NOTIFY_EXIT\","];
             break;
-            
+
         default:
             break;
     }
@@ -547,10 +550,10 @@ bail:
 
     //start process
     [description appendString:@"\"process\":{"];
-       
+
     //add pid, path, etc
     [description appendFormat: @"\"pid\":%d,\"name\":\"%@\",\"path\":\"%@\",\"uid\":%d,",self.pid, self.name, self.path, self.uid];
-   
+
     //add cpu type
     switch(self.architecture)
     {
@@ -558,41 +561,61 @@ bail:
         case ArchIntel:
             [description appendFormat: @"\"architecture\":\"Intel\","];
             break;
-        
+
         //apple
         case ArchAppleSilicon:
             [description appendFormat: @"\"architecture\":\"Apple Silicon\","];
             break;
 
+        //fail1
+        case ArchFail1:
+            [description appendFormat: @"\"architecture\":\"fail1\","];
+            break;
+
+        //fail2
+        case ArchFail2:
+            [description appendFormat: @"\"architecture\":\"fail2\","];
+            break;
+
+        //fail3
+        case ArchFail3:
+            [description appendFormat: @"\"architecture\":\"fail3\","];
+            break;
+
+        //fail3
+        case ArchUnknown:
+            [description appendFormat: @"\"architecture\":\"unknown\","];
+            break;
+
         //unknown
         default:
-            [description appendString:@"\"architecture\":\"unknown\","];
+            [description appendString:@"\"architecture\":\"really-unknown\","];
             break;
     }
-    
+
     //arguments
     if(0 != self.arguments.count)
     {
        //start list
        [description appendFormat:@"\"arguments\":["];
-       
+
        //add all arguments
        for(NSString* argument in self.arguments)
        {
            //skip blank args
            if(0 == argument.length) continue;
-           
+
            //add
-           [description appendFormat:@"\"%@\",", [argument stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""]];
+           [description appendFormat:@"\"%@\",", [[[argument stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"] stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"] stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""]];
        }
-       
+
        //remove last ','
        if(YES == [description hasSuffix:@","])
        {
            //remove
-           [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+           [description deleteCharactersInRange:NSMakeRange(description.length-1, 1)];
        }
-       
+
        //terminate list
        [description appendString:@"],"];
     }
@@ -602,13 +625,13 @@ bail:
        //add empty list
        [description appendFormat:@"\"arguments\":[],"];
     }
-    
+
     //environment
     if(nil != self.environment && 0 != self.environment.count)
     {
        //start list
        [description appendFormat:@"\"environment\":{"];
-       
+
        //add all environment variables
        [self.environment enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL * _Nonnull stop) {
            //add key and encode double quotes
@@ -620,7 +643,7 @@ bail:
        if(YES == [description hasSuffix:@","])
        {
            //remove
-           [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+           [description deleteCharactersInRange:NSMakeRange(description.length-1, 1)];
        }
        //terminate object
        [description appendString:@"},"];
@@ -634,7 +657,7 @@ bail:
 
     //add ppid
     [description appendFormat: @"\"ppid\":%d,", self.ppid];
-    
+
     //add rpdi
     [description appendFormat: @"\"rpid\":%d,", self.rpid];
 
@@ -652,7 +675,7 @@ bail:
     if(YES == [description hasSuffix:@","])
     {
        //remove
-       [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+       [description deleteCharactersInRange:NSMakeRange(description.length-1, 1)];
     }
 
     //terminate list
@@ -660,10 +683,10 @@ bail:
 
     //signing info (reported)
     [description appendString:@"\"signing info (reported)\":{"];
-    
+
     //add cs flags, platform binary
     [description appendFormat: @"\"csFlags\":%d,\"platformBinary\":%d,", self.csFlags.intValue, self.isPlatformBinary.intValue];
-    
+
     //add signing id
     if(0 == self.signingID.length)
     {
@@ -676,7 +699,7 @@ bail:
         //append
         [description appendFormat:@"\"signingID\":\"%@\",", self.signingID];
     }
-    
+
     //add team id
     if(0 == self.teamID.length)
     {
@@ -689,10 +712,10 @@ bail:
         //append
         [description appendFormat:@"\"teamID\":\"%@\",", self.teamID];
     }
-    
+
     //alloc string for cd hash
     cdHash = [NSMutableString string];
-    
+
     //format cd hash
     [self.cdHash enumerateByteRangesUsingBlock:^(const void *bytes, NSRange byteRange, BOOL *stop)
     {
@@ -701,10 +724,10 @@ bail:
             [cdHash appendFormat:@"%02X", ((uint8_t*)bytes)[i]];
         }
     }];
-    
+
     //add cs hash
     [description appendFormat:@"\"cdHash\":\"%@\"", cdHash];
-    
+
     //terminate dictionary
     [description appendString:@"},"];
 
@@ -716,28 +739,28 @@ bail:
     {
        //value
        id value = self.signingInfo[key];
-       
+
        //handle `KEY_SIGNATURE_SIGNER`
        if(YES == [key isEqualToString:KEY_SIGNATURE_SIGNER])
        {
            //convert to pritable
            switch ([value intValue]) {
-           
+
                //'None'
                case None:
                    [description appendFormat:@"\"%@\":\"%@\",", key, @"none"];
                    break;
-                   
+
                //'Apple'
                case Apple:
                    [description appendFormat:@"\"%@\":\"%@\",", key, @"Apple"];
                    break;
-               
+
                //'App Store'
                case AppStore:
                    [description appendFormat:@"\"%@\":\"%@\",", key, @"App Store"];
                    break;
-                   
+
                //'Developer ID'
                case DevID:
                    [description appendFormat:@"\"%@\":\"%@\",", key, @"Developer ID"];
@@ -747,12 +770,12 @@ bail:
                case AdHoc:
                   [description appendFormat:@"\"%@\":\"%@\",", key, @"AdHoc"];
                   break;
-                   
+
                default:
                    break;
            }
        }
-       
+
        //number?
        // add as is
        else if(YES == [value isKindOfClass:[NSNumber class]])
@@ -765,22 +788,22 @@ bail:
        {
            //start
            [description appendFormat:@"\"%@\":[", key];
-           
+
            //add each item
            [value enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL * _Nonnull stop) {
-               
+
                //add
                [description appendFormat:@"\"%@\"", obj];
-               
+
                //add ','
                if(index != ((NSArray*)value).count-1)
                {
                    //add
                    [description appendString:@","];
                }
-               
+
            }];
-           
+
            //terminate
            [description appendString:@"],"];
        }
@@ -797,7 +820,7 @@ bail:
     if(YES == [description hasSuffix:@","])
     {
       //remove
-      [description deleteCharactersInRange:NSMakeRange([description length]-1, 1)];
+      [description deleteCharactersInRange:NSMakeRange(description.length-1, 1)];
     }
 
     //terminate dictionary
@@ -828,28 +851,28 @@ pid_t getParentID(pid_t child)
 {
     //parent id
     pid_t parentID = -1;
-    
+
     //kinfo_proc struct
     struct kinfo_proc processStruct = {0};
-    
+
     //size
     size_t procBufferSize = 0;
-    
+
     //mib
     const u_int mibLength = 4;
-    
+
     //syscall result
     int sysctlResult = -1;
-    
+
     //init buffer length
     procBufferSize = sizeof(processStruct);
-    
+
     //init mib
     int mib[mibLength] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, child};
-    
+
     //make syscall
     sysctlResult = sysctl(mib, mibLength, &processStruct, &procBufferSize, NULL, 0);
-    
+
     //check if got ppid
     if( (noErr == sysctlResult) &&
         (0 != procBufferSize) )
@@ -857,6 +880,6 @@ pid_t getParentID(pid_t child)
         //save ppid
         parentID = processStruct.kp_eproc.e_ppid;
     }
-    
+
     return parentID;
 }

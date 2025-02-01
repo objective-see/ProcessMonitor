@@ -16,8 +16,8 @@
 //'skipAPple' flag
 BOOL skipApple = NO;
 
-//filter string
-NSString* filterBy = nil;
+//filter regex
+NSRegularExpression *filterByRegex = nil;
 
 //'prettyPrint' flag
 BOOL prettyPrint = NO;

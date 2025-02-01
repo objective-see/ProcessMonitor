@@ -24,10 +24,10 @@
 NSMutableDictionary* generateSigningInfo(Process* process, NSUInteger options, SecCSFlags flags);
 
 //extract signing info/check via dynamic code ref (process pid)
-CFDictionaryRef dynamicCodeCheck(Process* process, SecCSFlags flags, NSMutableDictionary* signingInfo);
+CFDictionaryRef dynamicCodeCheck(Process* process, SecCSFlags flags, NSMutableDictionary* signingInfo) CF_RETURNS_NOT_RETAINED;
 
 //extact signing info/check via static code ref (process path)
-CFDictionaryRef staticCodeCheck(Process* process, SecCSFlags flags, NSMutableDictionary* signingInfo);
+CFDictionaryRef staticCodeCheck(Process* process, SecCSFlags flags, NSMutableDictionary* signingInfo) CF_RETURNS_NOT_RETAINED;
 
 //determine who signed item
 NSNumber* extractSigner(SecStaticCodeRef code, SecCSFlags flags, BOOL isDynamic);

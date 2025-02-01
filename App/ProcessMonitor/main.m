@@ -20,7 +20,7 @@ int main(int argc, const char * argv[]) {
         NSArray* arguments = nil;
         
         //grab args
-        arguments = [[NSProcessInfo processInfo] arguments];
+        arguments = [NSProcessInfo processInfo].arguments;
         
         //run via user (app)?
         // display error popup
@@ -63,7 +63,7 @@ int main(int argc, const char * argv[]) {
     
         //run loop
         // as don't want to exit
-        [[NSRunLoop currentRunLoop] run];
+        [NSRunLoop.currentRunLoop run];
         
     } //pool
     
@@ -98,7 +98,7 @@ BOOL processArgs(NSArray* arguments)
         index++;
         
         //sanity check
-        // make sure name comes after
+        // make sure name regex comes after
         if(index >= arguments.count)
         {
             //invalid
@@ -108,8 +108,17 @@ BOOL processArgs(NSArray* arguments)
             goto bail;
         }
         
-        //grab filter name
-        filterBy = [arguments objectAtIndex:index];
+        //grab filter name regex
+        NSError *regex_error = nil;
+        filterByRegex = [NSRegularExpression regularExpressionWithPattern:arguments[index] options:0 error:&regex_error];
+        if (!filterByRegex || regex_error) {
+            printf("%s", [NSString stringWithFormat:@"Error creating regex: %@\n", regex_error.localizedDescription].UTF8String);
+            //invalid
+            validArgs = NO;
+            
+            //bail
+            goto bail;
+        }
     }
 
 bail:
@@ -118,39 +127,33 @@ bail:
 }
 
 //print usage
-void usage()
+void usage(void)
 {
     //name
-    NSString* name = nil;
+    NSString* name = NSBundle.mainBundle.infoDictionary[@"CFBundleName"];
     
     //version
-    NSString* version = nil;
-    
-    //extract name
-    name = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleName"];
-    
-    //extract version
-    version = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleVersion"];
+    NSString* version = NSBundle.mainBundle.infoDictionary[@"CFBundleVersion"];
 
     //usage
     printf("\n%s (v%s) usage:\n", name.UTF8String, version.UTF8String);
-    printf(" -h or -help      display this usage info\n");
-    printf(" -pretty          JSON output is 'pretty-printed'\n");
-    printf(" -skipApple       ignore Apple (platform) processes \n");
-    printf(" -parseEnv        parse environment variable information\n");
-    printf(" -filter <name>   show events matching process name\n\n");
+    printf(" -h or -help            display this usage info\n");
+    printf(" -pretty                JSON output is 'pretty-printed'\n");
+    printf(" -skipApple             ignore Apple (platform) processes \n");
+    printf(" -parseEnv              parse environment variable information\n");
+    printf(" -filter <name regex>   show events matching process name\n\n");
     
     return;
 }
 
 //monitor
-BOOL monitor()
+BOOL monitor(void)
 {
     //(process) events of interest
     es_event_type_t events[] = {ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_FORK, ES_EVENT_TYPE_NOTIFY_EXIT};
     
     //init monitor
-    ProcessMonitor* procMon = [[ProcessMonitor alloc] init];
+    ProcessMonitor* procMon = ProcessMonitor.new;
     
     //define block
     // automatically invoked upon process events
@@ -170,10 +173,10 @@ BOOL monitor()
         
         //filter
         // and no match? skip
-        if(0 != filterBy.length)
+        if(nil != filterByRegex)
         {
             //check file paths & process
-            if(YES != [process.path hasSuffix:filterBy])
+            if(0 == [filterByRegex numberOfMatchesInString:process.path options:0 range:NSMakeRange(0, process.path.length)])
             {
                 //ignore
                 return;
@@ -248,7 +251,7 @@ NSString* prettifyJSON(NSString* output)
     
     //convert to string
     // note, we manually unescape forward slashes
-    prettyString = [[[NSString alloc] initWithData:prettyData encoding:NSUTF8StringEncoding] stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"];
+    prettyString = [[NSString.alloc initWithData:prettyData encoding:NSUTF8StringEncoding] stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"];
    
 bail:
     

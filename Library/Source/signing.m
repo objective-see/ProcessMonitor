@@ -66,17 +66,17 @@ NSMutableDictionary* generateSigningInfo(Process* process, NSUInteger options, S
     }
     
     //extract code signing id
-    if(nil != [(__bridge NSDictionary*)signingDetails objectForKey:(__bridge NSString*)kSecCodeInfoIdentifier])
+    if(nil != ((__bridge NSDictionary*)signingDetails)[(__bridge NSString*)kSecCodeInfoIdentifier])
     {
         //extract/save
-        signingInfo[KEY_SIGNATURE_IDENTIFIER] = [(__bridge NSDictionary*)signingDetails objectForKey:(__bridge NSString*)kSecCodeInfoIdentifier];
+        signingInfo[KEY_SIGNATURE_IDENTIFIER] = ((__bridge NSDictionary*)signingDetails)[(__bridge NSString*)kSecCodeInfoIdentifier];
     }
     
     //extract team signing id
-    if(nil != [(__bridge NSDictionary*)signingDetails objectForKey:(__bridge NSString*)kSecCodeInfoTeamIdentifier])
+    if(nil != ((__bridge NSDictionary*)signingDetails)[(__bridge NSString*)kSecCodeInfoTeamIdentifier])
     {
         //extract/save
-        signingInfo[KEY_SIGNATURE_TEAM_IDENTIFIER] = [(__bridge NSDictionary*)signingDetails objectForKey:(__bridge NSString*)kSecCodeInfoTeamIdentifier];
+        signingInfo[KEY_SIGNATURE_TEAM_IDENTIFIER] = ((__bridge NSDictionary*)signingDetails)[(__bridge NSString*)kSecCodeInfoTeamIdentifier];
     }
     
     //extract signing authorities
@@ -119,7 +119,7 @@ CFDictionaryRef dynamicCodeCheck(Process* process, SecCSFlags flags, NSMutableDi
     if(errSecSuccess != status)
     {
         //set error
-        signingInfo[KEY_SIGNATURE_STATUS] = [NSNumber numberWithInt:status];
+        signingInfo[KEY_SIGNATURE_STATUS] = @(status);
     
         //bail
         goto bail;
@@ -130,14 +130,14 @@ CFDictionaryRef dynamicCodeCheck(Process* process, SecCSFlags flags, NSMutableDi
     if(errSecSuccess != status)
     {
         //set error
-        signingInfo[KEY_SIGNATURE_STATUS] = [NSNumber numberWithInt:status];
+        signingInfo[KEY_SIGNATURE_STATUS] = @(status);
         
         //bail
         goto bail;
     }
     
     //happily signed
-    signingInfo[KEY_SIGNATURE_STATUS] = [NSNumber numberWithInt:errSecSuccess];
+    signingInfo[KEY_SIGNATURE_STATUS] = @(errSecSuccess);
     
     //determine signer
     // apple, app store, dev id, adhoc, etc...
@@ -182,7 +182,7 @@ CFDictionaryRef staticCodeCheck(Process* process, SecCSFlags flags, NSMutableDic
     if(nil == process.path)
     {
         //set error
-        signingInfo[KEY_SIGNATURE_STATUS] = [NSNumber numberWithInt:kPOSIXErrorESRCH];
+        signingInfo[KEY_SIGNATURE_STATUS] = @(kPOSIXErrorESRCH);
         
         //bail
         goto bail;
@@ -193,7 +193,7 @@ CFDictionaryRef staticCodeCheck(Process* process, SecCSFlags flags, NSMutableDic
     if(errSecSuccess != status)
     {
         //set error
-        signingInfo[KEY_SIGNATURE_STATUS] = [NSNumber numberWithInt:status];
+        signingInfo[KEY_SIGNATURE_STATUS] = @(status);
         
         //bail
         goto bail;
@@ -204,14 +204,14 @@ CFDictionaryRef staticCodeCheck(Process* process, SecCSFlags flags, NSMutableDic
     if(errSecSuccess != status)
     {
         //set error
-        signingInfo[KEY_SIGNATURE_STATUS] = [NSNumber numberWithInt:status];
+        signingInfo[KEY_SIGNATURE_STATUS] = @(status);
         
         //bail
         goto bail;
     }
     
     //happily signed
-    signingInfo[KEY_SIGNATURE_STATUS] = [NSNumber numberWithInt:errSecSuccess];
+    signingInfo[KEY_SIGNATURE_STATUS] = @(errSecSuccess);
     
     //determine signer
     // apple, app store, dev id, adhoc, etc...
@@ -276,7 +276,7 @@ NSNumber* extractSigner(SecStaticCodeRef code, SecCSFlags flags, BOOL isDynamic)
     if(errSecSuccess == validateRequirement(code, isApple, flags, isDynamic))
     {
         //set signer to apple
-        signer = [NSNumber numberWithInt:Apple];
+        signer = @(Apple);
     }
     
     //check 2: "is app store"
@@ -284,14 +284,14 @@ NSNumber* extractSigner(SecStaticCodeRef code, SecCSFlags flags, BOOL isDynamic)
     else if(errSecSuccess == validateRequirement(code, isAppStore, flags, isDynamic))
     {
         //set signer to app store
-        signer = [NSNumber numberWithInt:AppStore];
+        signer = @(AppStore);
     }
     
     //check 3: "is dev id"
     else if(errSecSuccess == validateRequirement(code, isDevID, flags, isDynamic))
     {
         //set signer to dev id
-        signer = [NSNumber numberWithInt:DevID];
+        signer = @(DevID);
     }
     
     //otherwise
@@ -299,7 +299,7 @@ NSNumber* extractSigner(SecStaticCodeRef code, SecCSFlags flags, BOOL isDynamic)
     else
     {
         //set signer to ad hoc
-        signer = [NSNumber numberWithInt:AdHoc];
+        signer = @(AdHoc);
     }
     
     return signer;
@@ -349,7 +349,7 @@ NSMutableArray* extractSigningAuths(NSDictionary* signingDetails)
     authorities = [NSMutableArray array];
     
     //get cert chain
-    certificateChain = [signingDetails objectForKey:(__bridge NSString*)kSecCodeInfoCertificates];
+    certificateChain = signingDetails[(__bridge NSString*)kSecCodeInfoCertificates];
     if(0 == certificateChain.count)
     {
         //no certs
@@ -363,7 +363,7 @@ NSMutableArray* extractSigningAuths(NSDictionary* signingDetails)
         commonName = NULL;
         
         //extract cert
-        certificate = (__bridge SecCertificateRef)([certificateChain objectAtIndex:index]);
+        certificate = (__bridge SecCertificateRef)(certificateChain[index]);
         
         //get common name
         if( (errSecSuccess == SecCertificateCopyCommonName(certificate, &commonName)) &&
