@@ -39,6 +39,9 @@ int main(int argc, const char * argv[]) {
         {
             //print usage
             usage();
+
+            //mark as success
+            status = 0;
             
             //done
             goto bail;
