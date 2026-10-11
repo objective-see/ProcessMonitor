@@ -71,7 +71,7 @@ pid_t (*getRPID)(pid_t pid) = NULL;
                       
             //not permitted
             case ES_NEW_CLIENT_RESULT_ERR_NOT_PERMITTED:
-                NSLog(@"ES_NEW_CLIENT_RESULT_ERR_NOT_PERMITTED: \"The caller is not permitted to connect. They lack Transparency, Consent, and Control (TCC) approval form the user.\"");
+                NSLog(@"ES_NEW_CLIENT_RESULT_ERR_NOT_PERMITTED: \"The caller is not permitted to connect. They lack Transparency, Consent, and Control (TCC) approval from the user.\"");
                 break;
                       
             //not privileged
